@@ -1,0 +1,1292 @@
+---
+title: "Endemic OXA Cumulative Report"
+output: pdf_document
+---
+---
+title: "Endemic OXA Cumulative Report"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r load-packages, include=FALSE}
+library(tinytex)
+library(readr)
+library(raster)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(knitr)
+library(shiny)
+library(scales)
+library(tidyverse)
+library(gridExtra)
+library(lubridate)
+library(table1)
+library(kableExtra)
+library(sf)
+library(ggbreak)
+library(gghighlight)
+library(flextable)
+```
+
+```{r, include=FALSE}
+#asking user to select files 
+line_list_2019 <- file.choose()
+line_list_2020 <- file.choose()
+line_list_2021 <- file.choose()
+line_list_2022 <- file.choose()
+CRO_WGS <- file.choose()
+CRO_WGS_2022 <- file.choose()
+NCBI_genes <- file.choose()
+VA_map <- file.choose()
+```
+
+```{r, include=FALSE}
+#open the data sheet from the separate csv files 
+linelist_2022 <- read_csv(line_list_2022)
+linelist_2021 <- read_csv(line_list_2021)
+linelist_2020 <- read_csv(line_list_2020)
+linelist_2019 <- read_csv(line_list_2019)
+ncbi <- read_csv(NCBI_genes)
+wgs <- read_csv(CRO_WGS)
+wgs2022 <- read_csv(CRO_WGS_2022)
+VA_map <- read_sf(VA_map)
+```
+
+```{r, include=FALSE}
+#define color palettes
+Palette <- c("#1F77B4", "#AEC7EB", "#FF7F0E", "#FFBB78", "#2CA02C", 
+             "#98DF8A", "#D62728", "#9467BD", "#C5B0D5", "#8C564B", "#C49C94", 
+             "#E377C2", "#F7B6D2", "#7F7F7F", "#C7C7C7", "#BCBD22", "#DBDB8D", 
+             "#17BECF", "#9EDAE5")
+OXA_Palette <- c('OXA-23' = "#1F77B4", 
+                 'OXA-24' = "#FF7F0E", 
+                 'OXA-72' = "#FFBB78", 
+                 'Other OXA' = "#2CA02C", 
+                 "No OXA Genes" = "#7F7F7F")
+PDS_Palette <- c("PDS000047378.11" = "#1F77B4",
+                 "PDS000075026.12" = "#AEC7EB",
+                 "PDS000083246.22" = "#FF7F0E",
+                 "PDS000107407.2" = "#FFBB78",
+                 "PDS000107408.2" = "#2CA02C",
+                 "PDS000108570.10" = "#98DF8A",
+                 "PDS000111517.1" = "#D62728",
+                 "PDS000112545.1" = "#9467BD",
+                 "PDS000075027.15" = "#C5B0D5",
+                 "PDS000094961.54" = "#8C564B",
+                 "PDS000105896.9" = "#C49C94",
+                 "PDS000098000.5" = "#E377C2",
+                 "PDS000104873.2" = "#F7B6D2",
+                 "PDS000112895.3" = "#17BECF",
+                 "PDS000104060.1" = "#9EDAE5",
+                 "PDS000075027.15" = "#BCBD22",
+                 "PDS000078826.1" = "#DBDB8D",
+                 "No Cluster" = "#7F7F7F",
+                 "Not Sequenced" = "#C7C7C7")
+```
+
+```{r, warning=FALSE, include=FALSE}
+# Cleaning Columns
+#linelist_2022
+names(linelist_2022) <- linelist_2022[1,]
+linelist_2022 <- linelist_2022[-1,] # Rename column names as first row data
+linelist_2022 <- linelist_2022 %>% #Selecting and renaming columns
+  dplyr::select('DCLS ID', 'Submitter', 'OXA-23', 'OXA-24', 'OXA-58', 
+                'Date of collection', 'DCLS - ID confirmation', 
+                'Date received at DCLS', 'Source') %>%
+  rename('R number' = 'DCLS ID', 'Organism' = 'DCLS - ID confirmation', 
+         'Receive Date' = 'Date received at DCLS')
+
+total_2022 <- count(linelist_2022)
+total_2022
+
+#linelist_2021
+names(linelist_2021) <- linelist_2021[1,]
+linelist_2021 <- linelist_2021[-1,] # Rename column names as first row data
+linelist_2021 <- linelist_2021 %>% #Selecting and renaming columns
+  dplyr::select('DCLS ID', 'Submitter', 'Date of collection', 
+                'DCLS - ID confirmation', 'Date received at DCLS', 
+                'Source') %>%
+  rename('R number' = 'DCLS ID', 'Organism' = 'DCLS - ID confirmation', 
+         'Receive Date' = 'Date received at DCLS')
+
+total_2021 <- count(linelist_2021)
+total_2021
+
+#linelist_2020
+names(linelist_2020) <- linelist_2020[1,]
+linelist_2020 <- linelist_2020[-1,] # Rename column names as first row data
+linelist_2020 <- linelist_2020 %>% #Selecting and renaming columns
+  dplyr::select('DCLS ID', 'Submitter', 'Date of collection', 
+                'DCLS - ID confirmation', 'Date received at DCLS', 
+                'Source') %>%
+  rename('R number' = 'DCLS ID', 'Organism' = 'DCLS - ID confirmation', 
+         'Receive Date' = 'Date received at DCLS')
+
+total_2020 <- count(linelist_2020)
+total_2020
+
+#linelist_2019
+linelist_2019
+linelist_2019 <- linelist_2019 %>% #Selecting and renaming columns
+  dplyr::select('DCLS ID', 'Submitter', 'Date of collection', 
+                'Submitter Organism ID', 'Date received at DCLS', 
+                'Source') %>%
+  rename('R number' = 'DCLS ID', 'Organism' = 'Submitter Organism ID', 
+         'Receive Date' = 'Date received at DCLS') %>%
+  filter(grepl('Acinetobacter|baum*', `Organism`))
+
+total_2019 <- count(linelist_2019)
+total_2019
+
+#ncbi
+ncbi <- ncbi %>% #Selecting columns
+  dplyr::select(`Isolate identifiers`, `SNP cluster`, 
+         `Stress genotypes`, `Virulence genotypes`, `AMR genotypes`) %>%
+  rename('WGS ID#' = 'Isolate identifiers')
+head(ncbi)
+
+#WGS log
+#select only A. baumannii sequences
+wgs <- wgs %>% #Selecting columns
+  dplyr::select('R number', 'WGS ID#', 'Organism') %>%
+  filter(grepl('baum*', `Organism`))
+head(wgs)
+summary(wgs)
+
+#Editing R numbers to remove _# for rerun
+#wgs
+wgs$'R number' = gsub("_.*", "", wgs$'R number')
+#Edit to remove duplicate R numbers from WGS data
+wgs[!rev(duplicated(rev(wgs$'WGS ID#'))),]
+
+#WGS log 2022
+#select only A. baumannii sequences
+wgs2022 <- wgs2022 %>% #Selecting columns
+  dplyr::select('R number', 'WGS ID#', 'Organism') %>%
+  filter(grepl('bau*', `Organism`))
+head(wgs2022)
+summary(wgs2022)
+
+#Editing R numbers to remove _# for rerun
+#wgs2022
+wgs2022$'R number' = gsub("_.*", "", wgs2022$'R number')
+
+#Edit to remove duplicate R numbers from WGS data
+wgs2022[!rev(duplicated(rev(wgs2022$'WGS ID#'))),]
+```
+
+```{r, include=FALSE}
+#Combine all linelists into one dataframe
+linelistall <- linelist_2020 %>%
+  full_join(linelist_2021) %>%
+  full_join(linelist_2022) %>%
+  full_join(linelist_2019)
+linelistall 
+```
+
+```{r, include=FALSE}
+#combine all wgs logs into one dataframe
+wgsall <- wgs %>%
+  full_join(wgs2022)
+wgsall
+
+#Fix typos in species names
+wgsall$Organism = gsub(".*bau.*", "A. baumannii", wgsall$Organism)
+wgsall
+```
+
+```{r, include=FALSE}
+#merge the ncbi dataframe with the wgs log
+wgsncbi <- merge(wgsall, ncbi, by = 'WGS ID#', all=TRUE)
+wgsncbi
+```
+
+```{r, include=FALSE}
+#merge the linelist dataframe with the ncbiwgs dataframe
+alldata <- merge(wgsncbi, linelistall, by = 'R number', all=TRUE) 
+```
+
+```{r, include=FALSE}
+#Cleaning Column data
+#Merge Organism ID columns
+alldata <- transform(alldata,
+  Organism.x = replace(Organism.x, is.na(Organism.x), 
+                       paste0(Organism.y[is.na(Organism.x)])))
+
+#Remove 2nd Organism column after merging
+alldata <- dplyr::select(alldata, -Organism.y)
+
+#Rename Organism.x to Organism
+alldata <- alldata %>% 
+  rename(Organism = Organism.x)
+
+#Replace NA in Collection date with receive date
+alldata <- transform(alldata,
+  Date.of.collection = replace(Date.of.collection, is.na(Date.of.collection), 
+                               paste0(Receive.Date[is.na(Date.of.collection)])))
+
+#Remove Receive date column after merging
+alldata <- dplyr::select(alldata, -Receive.Date)
+alldata
+```
+
+```{r, include=FALSE}
+#Editing Submitter names
+alldata$Submitter = gsub(".*Burlington.*", "LabCorp Burlington", alldata$Submitter)
+alldata$Submitter = gsub(".*Mary Washington.*", "Mary Washington Hospital", alldata$Submitter)
+alldata$Submitter = gsub(".*Quest.*", "Quest Diagnostics-Roanoke", alldata$Submitter)
+alldata$Submitter = gsub(".*Wythe.*", "Wythe County Community Hospital", alldata$Submitter)
+alldata$Submitter = gsub(".*Henrico.*", "Henrico Doctor's Hospital", alldata$Submitter)
+alldata$Submitter = gsub(".*Martha Jefferson.*", "Sentara Martha Jefferson Hospital", alldata$Submitter)
+alldata$Submitter = gsub(".*PWMC.*", "Prince William Medical Center", alldata$Submitter)
+alldata$Submitter = gsub(".*Prince William.*", "Prince William Medical Center", alldata$Submitter)
+alldata$Submitter = gsub(".*Central VA.*", "McGuire VAMC", alldata$Submitter)
+alldata$Submitter = gsub(".*Augusta.*", "Augusta Medical Center", alldata$Submitter)
+```
+
+```{r, include=FALSE}
+#Add column of OXA genes identified using WGS
+alldata <- alldata %>%  
+  mutate(WGS.Gene = case_when(grepl("OXA-23", AMR.genotypes) ~ "OXA-23",
+                          grepl("OXA-24", AMR.genotypes) ~"OXA-24",
+                          grepl("OXA-72", AMR.genotypes) ~"OXA-72", 
+                          grepl("OXA-58", AMR.genotypes) ~"OXA-58",
+                          grepl("OXA*,", AMR.genotypes) ~"Other OXA",
+                          TRUE ~ "No OXA Genes"))
+alldata
+```
+
+```{r,include=FALSE}
+#Changing date of collection to date instead of character
+alldata<- alldata %>% 
+  mutate(Date.of.collection = as.Date(Date.of.collection, format = "%m/%d/%Y"))
+alldata
+
+#merge R numbers with multiple isolates sequenced
+alldata <- alldata %>%
+  fill(Submitter, Date.of.collection, Source, .direction = "down") %>%
+  slice(n = c(-35, -53, -151, -155, -195))
+alldata
+```
+
+```{r, include=FALSE}
+#Add county of submitter
+alldata <- alldata %>%  
+   mutate(County = case_when(grepl("Augusta Medical Center", Submitter) ~ "Augusta County",
+                           grepl("Chesapeake", Submitter) ~"Chesapeake city",
+                           grepl("Prince William Medical Center", Submitter) ~"Prince William County", 
+                           grepl("Labcorp Villa Park", Submitter) ~"Henrico County",
+                           grepl("Mary Washington Hospital", Submitter) ~"Albemarle County",
+                           grepl("Henrico Doctor's Hospital", Submitter) ~"Henrico County",
+                           grepl("Quest Diagnostics-Roanoke", Submitter) ~"Roanoke city",
+                           grepl("LabCorp Burlington", Submitter) ~"Alamance County",
+                           grepl("CJW Medical Center", Submitter) ~"Richmond city",
+                           grepl("Sentara Martha Jefferson Hospital", Submitter) ~"Albemarle County",
+                           grepl("Lynchburg General Hospital", Submitter) ~"Lynchburg city",
+                           grepl("Winchester Medical Center", Submitter) ~"Frederick County",
+                           grepl("McGuire VAMC", Submitter) ~"Richmond city",
+                           grepl("Wythe County Community Hospital", Submitter) ~"Wythe County",
+                           grepl("Riverside Regional Medical Center", Submitter) ~"Newport News city",
+                           grepl("Children's Hospital of the King's Daughters", Submitter) ~"Norfolk city",
+                           grepl("Virginia Hospital Center", Submitter) ~"Arlington County"))
+alldata
+```
+
+```{r, include=FALSE}
+#Add Health District
+alldata <- alldata %>%  
+   mutate("Health District" = case_when(grepl("Chesterfield", County) ~ "Chesterfield",
+                           grepl("Colonial Heights", County) ~ "Chesterfield",
+                           grepl("Powhatan", County) ~ "Chesterfield",
+                           grepl("Dinwiddie", County) ~ "Crater",
+                           grepl("Greensville", County) ~ "Crater",
+                           grepl("Prince George", County) ~"Crater",
+                           grepl("Surry", County) ~ "Crater",
+                           grepl("Emporia", County) ~ "Crater",
+                           grepl("Hopewell", County) ~ "Crater",
+                           grepl("Petersburg", County) ~ "Crater",
+                           grepl("Sussex", County) ~ "Crater",
+                           grepl("Prince William", County) ~"Prince William",
+                           grepl("Manassas city", County) ~"Prince William",
+                           grepl("Manassas Park", County) ~"Prince William",
+                           grepl("Henrico", County) ~"Henrico",
+                           grepl("Charles City", County) ~"Chicahominy",
+                           grepl("Goochland", County) ~"Chicahominy",
+                           grepl("Hanover", County) ~"Chicahominy",
+                           grepl("New Kent", County) ~"Chicahominy",
+                           grepl("Amelia", County) ~"Piedmont",
+                           grepl("Buckingham", County) ~"Piedmont",
+                           grepl("Charlotte County", County) ~"Piedmont",
+                           grepl("Cumberland", County) ~"Piedmont",
+                           grepl("Lunenburg", County) ~"Piedmont",
+                           grepl("Nottoway", County) ~"Piedmont",
+                           grepl("Prince Edward", County) ~"Piedmont",
+                           grepl("Roanoke city", County) ~"Roanoke",
+                           grepl("Alamance", County) ~"North Carolina",
+                           grepl("Richmond city", County) ~"Richmond",
+                           grepl("Brunswick", County) ~"Southside",
+                           grepl("Halifax", County) ~"Southside",
+                           grepl("Mecklenburg", County) ~"Southside",
+                           grepl("Chesapeake", County) ~"Chesapeake",
+                           grepl("Accomack", County) ~"Eastern Shore",
+                           grepl("Northampton", County) ~"Eastern Shore",
+                           grepl("Hampton", County) ~"Hampton",
+                           grepl("James City", County) ~"Peninsula",
+                           grepl("York", County) ~"Peninsula",
+                           grepl("Newport News", County) ~"Peninsula",
+                           grepl("Poquoson", County) ~"Peninsula",
+                           grepl("Williamsburg", County) ~"Peninsula",
+                           grepl("Portsmouth", County) ~"Portsmouth",
+                           grepl("Norfolk", County) ~"Norfolk",
+                           grepl("Essex", County) ~"Three Rivers",
+                           grepl("Gloucester", County) ~"Three Rivers",
+                           grepl("King and Queen", County) ~"Three Rivers",
+                           grepl("King William", County) ~"Three Rivers",
+                           grepl("Lancaster", County) ~"Three Rivers",
+                           grepl("Mathews", County) ~"Three Rivers",
+                           grepl("Middlesex", County) ~"Three Rivers",
+                           grepl("Northumberland", County) ~"Three Rivers",
+                           grepl("Richmond County", County) ~"Three Rivers",
+                           grepl("Westmoreland", County) ~"Three Rivers",
+                           grepl("Virginia Beach", County) ~"Virginia Beach",
+                           grepl("Isle of Wight", County) ~"Western Tidewater",
+                           grepl("Southampton", County) ~"Western Tidewater",
+                           grepl("Franklin city", County) ~"Western Tidewater",
+                           grepl("Suffolk", County) ~"Western Tidewater",
+                           grepl("Alleghany", County) ~"Alleghany",
+                           grepl("Botetourt", County) ~"Alleghany",
+                           grepl("Craig", County) ~"Alleghany",
+                           grepl("Covington", County) ~"Alleghany",
+                           grepl("Salem", County) ~"Alleghany",
+                           grepl("Roanoke County", County) ~"Alleghany",
+                           grepl("Amherst", County) ~"Central Virginia",
+                           grepl("Appomattox", County) ~"Central Virginia",
+                           grepl("Bedford County", County) ~"Central Virginia",
+                           grepl("Bedford city", County) ~"Central Virginia",
+                           grepl("Campbell", County) ~"Central Virginia",
+                           grepl("Lynchburg", County) ~"Central Virginia",
+                           grepl("Amherst", County) ~"Central Virginia",
+                           grepl("Buchanan", County) ~"Cumberland",
+                           grepl("Dickenson", County) ~"Cumberland",
+                           grepl("Russell", County) ~"Cumberland",
+                           grepl("Tazewell", County) ~"Cumberland",
+                           grepl("Lee", County) ~"Lenowisco",
+                           grepl("Scott", County) ~"Lenowisco",
+                           grepl("Wise", County) ~"Lenowisco",
+                           grepl("Norton city", County) ~"Lenowisco",
+                           grepl("Bland", County) ~"Mount Rogers",
+                           grepl("Carroll", County) ~"Mount Rogers",
+                           grepl("Grayson", County) ~"Mount Rogers",
+                           grepl("Smyth", County) ~"Mount Rogers",
+                           grepl("Washington", County) ~"Mount Rogers",
+                           grepl("Wythe", County) ~"Mount Rogers",
+                           grepl("Bristol", County) ~"Mount Rogers",
+                           grepl("Galax", County) ~"Mount Rogers",
+                           grepl("Floyd", County) ~"New River",
+                           grepl("Giles", County) ~"New River",
+                           grepl("Montgomery", County) ~"New River",
+                           grepl("Pulaski", County) ~"New River",
+                           grepl("Radford city", County) ~"New River",
+                           grepl("Pittsylvania", County) ~"Pittsylvania-Danville",
+                           grepl("Danville", County) ~"Pittsylvania-Danville",
+                           grepl("Franklin County", County) ~"West Piedmont",
+                           grepl("Henry", County) ~"West Piedmont",
+                           grepl("Patrick", County) ~"West Piedmont",
+                           grepl("Martinsville", County) ~"West Piedmont",
+                           grepl("Alexandria", County) ~"Alexandria",
+                           grepl("Fairfax city", County) ~"Fairfax",
+                           grepl("Fairfax County", County) ~"Fairfax",
+                           grepl("Falls Church", County) ~"Fairfax",
+                           grepl("Loudoun", County) ~"Loudoun",
+                           grepl("Augusta", County) ~"Central Shenandoah",
+                           grepl("Bath", County) ~"Central Shenandoah",
+                           grepl("Highland", County) ~"Central Shenandoah",
+                           grepl("Rockbridge", County) ~"Central Shenandoah",
+                           grepl("Rockingham", County) ~"Central Shenandoah",
+                           grepl("Buena Vista", County) ~"Central Shenandoah",
+                           grepl("Harrisonburg", County) ~"Central Shenandoah",
+                           grepl("Lexington", County) ~"Central Shenandoah",
+                           grepl("Staunton", County) ~"Central Shenandoah",
+                           grepl("Waynesboro", County) ~"Central Shenandoah",
+                           grepl("Clarke", County) ~"Lord Fairfax",
+                           grepl("Frederick County", County) ~"Lord Fairfax",
+                           grepl("Page", County) ~"Lord Fairfax",
+                           grepl("Shenandoah", County) ~"Lord Fairfax",
+                           grepl("Warren", County) ~"Lord Fairfax",
+                           grepl("Winchester", County) ~"Lord Fairfax",
+                           grepl("Caroline", County) ~"Rappahannock",
+                           grepl("King George", County) ~"Rappahannock",
+                           grepl("Spotsylvania", County) ~"Rappahannock",
+                           grepl("Stafford", County) ~"Rappahannock",
+                           grepl("Fredericksburg", County) ~"Rappahannock",
+                           grepl("Culpeper", County) ~"Rappahannock/Rapidan",
+                           grepl("Fauquier", County) ~"Rappahannock/Rapidan",
+                           grepl("Madison", County) ~"Rappahannock/Rapidan",
+                           grepl("Orange", County) ~"Rappahannock/Rapidan",
+                           grepl("Rappahannock", County) ~"Rappahannock/Rapidan",
+                           grepl("Albemarle", County) ~"Blue Ridge",
+                           grepl("Fluvanna", County) ~"Blue Ridge",
+                           grepl("Greene", County) ~"Blue Ridge",
+                           grepl("Louisa", County) ~"Blue Ridge",
+                           grepl("Nelson", County) ~"Blue Ridge",
+                           grepl("Charlottesville", County) ~"Blue Ridge",
+                           grepl("Arlington", County) ~"Arlington"))
+alldata
+```
+
+```{r, include=FALSE}
+# Remove NA in SNP.cluster to add info on whether not sequenced or not clustered
+alldata <- alldata  %>%
+  mutate(SNP.cluster = ifelse(is.na(WGS.ID.) & is.na(SNP.cluster), "Not Sequenced",
+               ifelse(!is.na(WGS.ID.) & is.na(SNP.cluster), "No Cluster", SNP.cluster)))
+alldata
+```
+
+```{r, include=FALSE}
+#Add Latitude and Longitude values based on submitter
+alldata <- alldata %>%  
+   mutate(coordinates = case_when(grepl("Augusta Medical Center", Submitter) ~ "38.104478308423694, -78.94313755721967",
+                        grepl("Chesapeake", Submitter) ~"36.74632545776263, -76.24545551359404",
+                        grepl("Prince William Medical Center", Submitter) ~"38.76713259733973, -77.48812362559732", 
+                        grepl("Labcorp Villa Park", Submitter) ~"37.632427232834395, -77.46820452324165",
+                        grepl("Mary Washington Hospital", Submitter) ~"38.31011578121884, -77.48401184650754",
+                        grepl("Henrico Doctor's Hospital", Submitter) ~"37.60414617832593, -77.53936392747299",
+                        grepl("Quest Diagnostics-Roanoke", Submitter) ~"37.25137216267505, -79.93866182510648",
+                        grepl("LabCorp Burlington", Submitter) ~"36.08328709818486, -79.51324203393507",
+                        grepl("CJW Medical Center", Submitter) ~"37.51411512981057, -77.52649357933862",
+                        grepl("Sentara Martha Jefferson Hospital", Submitter) ~"38.02322873567112, -78.4436675023191",
+                        grepl("Lynchburg General Hospital", Submitter) ~"37.41669484982034, -79.17114611213256",
+                        grepl("Winchester Medical Center", Submitter) ~"39.19432644925809, -78.19330350177302",
+                        grepl("McGuire VAMC", Submitter) ~"37.498735642934136, -77.46752123911473",
+                        grepl("Wythe County Community Hospital", Submitter) ~"36.954754124534425, -81.0964546251949",
+                        grepl("Riverside Regional Medical Center", Submitter) ~"37.063284792870924, -76.48206272748374",
+                        grepl("Children's Hospital of the King's Daughters", Submitter) ~"36.86275532199984, -76.30101499679927",
+                        grepl("Virginia Hospital Center", Submitter) ~"38.88964244963296, -77.12711329675885"))
+alldata
+
+#Separate coordinates into Latitude and Longitude
+lat_long <- alldata %>%
+  separate(coordinates, c('Latitude', 'Longitude'), ',')
+lat_long$Latitude <- as.numeric(lat_long$Latitude)
+lat_long$Longitude <- as.numeric(lat_long$Longitude)
+lat_long
+```
+
+```{r, include=FALSE}
+#Separate collection date into month, day, year
+alldata_sep <- alldata %>%
+  separate(Date.of.collection, c('Year', 'Month', 'Day'), '-')
+alldata_sep
+
+#Convert Month to numeric
+alldata_sep$Month <- as.numeric(alldata_sep$Month)
+alldata_sep
+
+#Convert numerical month to name
+alldata_sep$Month <- factor(month.abb[alldata_sep$Month],levels=month.abb)
+alldata_sep
+
+#Convert Year to numeric
+alldata_sep$Year <- as.numeric(alldata_sep$Year)
+alldata_sep
+```
+
+\noindent\rule{16cm}{0.4pt}
+
+### CRAB = Carbapenem Resistant *Acinetobacter baumannii*
+
+\noindent\rule{16cm}{0.4pt}
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#Histogram of CRAB submissions over time by month
+plottitle <- expression(paste(italic("Acinetobacter baumannii "), 'Isolates Submitted per Month'))
+bar <- ggplot(data = alldata)+
+  geom_histogram(aes(x = Date.of.collection), by = "months", color = "#1F77B4") +
+  scale_x_date(labels=date_format ("%b %y"), breaks=date_breaks("2 months")) +
+  xlab("Month of Collection") +
+  ylab("Count") +
+  labs(title = plottitle) +
+  guides(x = guide_axis(angle = 45))
+bar
+```
+\newpage
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "Yearly CRAB Submissions and OXA genes Identified by Whole Genome Sequencing", tab.id = "tab 1", label = "tab 1"}
+#Summarizing OXA gene data by year
+Yearly_Submission2 <- alldata_sep %>%
+  group_by(Year) %>%
+  summarize('Isolates Submitted' = n(), 'Sequenced' = sum(!is.na(WGS.ID.)), 
+            'OXA-23' = length(grep("OXA-23", AMR.genotypes)), 
+            'OXA-24' = length(grep("OXA-24", AMR.genotypes)), 
+            'OXA-72' =length(grep("OXA-72", AMR.genotypes)))
+
+#Set table settings
+set_flextable_defaults(
+  font.family = "Roboto",
+  font.size = 6, theme_fun = theme_vanilla)
+
+#Table
+table_1 <- flextable(Yearly_Submission2)
+table_1 <- colformat_double(x = table_1,
+  big.mark="", digits = 0)
+table_1
+```
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#Frequency plot of Submissions per submitter
+freqplot <- ggplot(data = alldata)+
+  geom_freqpoly(aes(x = Date.of.collection, group = Submitter, 
+                    color = Submitter), by = "months") +
+  theme(legend.position = "none", 
+           axis.text.x = element_text( size = 5),
+           axis.title = element_text( size = 8, face = "bold" ),
+           strip.text = element_text(size = 5)) +
+  xlab("Year") + 
+  ylab("Count") +
+  scale_color_manual(values=Palette) +
+  labs(title = plottitle, subtitle = "Based on Submitter") +
+  guides(x = guide_axis(angle = 45)) +
+  facet_wrap(~Submitter, ncol = 4)
+freqplot
+```
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#subset only sequenced isolates
+sequenced <- subset(alldata, WGS.ID. != 'NA', na.rm = TRUE)
+
+#Create title with italics
+plottitle1 <- expression(paste('OXA Genes in ', italic("Acinetobacter baumannii "),
+                               'per Month'))
+
+#Bar graph of OXA genes per month
+bar2 <- ggplot(data = sequenced) +
+  geom_histogram(aes(x = Date.of.collection, group = WGS.Gene, fill = WGS.Gene),
+                 color = "black", by = "months") +
+  scale_x_date(labels=date_format ("%b %y"), breaks=date_breaks("2 months")) +
+  scale_y_continuous(limits = c(0, 8)) +
+  guides(x = guide_axis(angle = 45)) +
+  xlab("Month of Collection") + 
+  ylab("Number of Isolates") +
+  scale_fill_manual(values=OXA_Palette) +
+  labs(title = plottitle1, caption = "Data for this graph includes only sequenced isolates") +
+  guides(fill=guide_legend(title="Gene")) #Rename legend +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.5, 'cm'),
+        legend.text=element_text(size=9))
+bar2
+```
+\newpage
+\noindent\rule{16cm}{0.4pt}
+
+### OXA Genes Per Submitter
+
+\noindent\rule{16cm}{0.4pt}
+
+The table and graphs below include all data. If no OXA genes were identified this could be because the isolates were not sequenced or because there were no OXA genes identified by whole genome sequencing. 
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA Genes Per Submitter", tab.id = "tab 2", label = "tab 2"}
+#Set table settings
+set_flextable_defaults(
+  font.family = "Roboto",
+  font.size = 6, theme_fun = theme_vanilla)
+
+#Submitter and Gene Table
+sub_gene_table <- table1(data = alldata, ~ Submitter | WGS.Gene, overall="Total")
+t1flex(sub_gene_table)
+```
+
+\noindent\rule{16cm}{0.4pt}
+
+### Per Health District Data
+
+\noindent\rule{16cm}{0.4pt}
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#Count OXA genes per health district
+alldata_HD <-alldata %>% 
+  count(`Health District`, WGS.Gene) 
+alldata_HD
+
+# bar graph of OXA genes per health district
+ggplot(alldata_HD) +
+  geom_col(mapping = aes(y = `Health District`, fill = WGS.Gene, x = n), color = "black") +
+  xlab("Number of Isolates") +
+  scale_fill_manual(values=OXA_Palette, name = "Gene") +
+  labs(title = "OXA Genes per Health District", caption = "Graph based on all data") +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.5, 'cm'),
+    legend.text=element_text(size=9), 
+    legend.background = element_rect(fill="white",
+                                  size=0.5, linetype="solid", 
+                                  colour ="Black"), 
+    legend.title = element_text(colour="black", size=10, 
+                                      face="bold"))
+
+```
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+VA_map
+VA_map1 <- VA_map %>% 
+  arrange(NAME)
+VA_map1
+#Add Health District
+HD_map <- VA_map %>%  
+   mutate("Health District" = case_when(grepl("Chesterfield", NAMELSAD) ~ "Chesterfield",
+                           grepl("Colonial Heights", NAMELSAD) ~ "Chesterfield",
+                           grepl("Powhatan", NAMELSAD) ~ "Chesterfield",
+                           grepl("Dinwiddie", NAMELSAD) ~ "Crater",
+                           grepl("Greensville", NAMELSAD) ~ "Crater",
+                           grepl("Prince George", NAMELSAD) ~"Crater",
+                           grepl("Surry", NAMELSAD) ~ "Crater",
+                           grepl("Emporia", NAMELSAD) ~ "Crater",
+                           grepl("Hopewell", NAMELSAD) ~ "Crater",
+                           grepl("Petersburg", NAMELSAD) ~ "Crater",
+                           grepl("Sussex", NAMELSAD) ~ "Crater",
+                           grepl("Prince William", NAMELSAD) ~"Prince William",
+                           grepl("Manassas city", NAMELSAD) ~"Prince William",
+                           grepl("Manassas Park", NAMELSAD) ~"Prince William",
+                           grepl("Henrico", NAMELSAD) ~"Henrico",
+                           grepl("Charles City", NAMELSAD) ~"Chicahominy",
+                           grepl("Goochland", NAMELSAD) ~"Chicahominy",
+                           grepl("Hanover", NAMELSAD) ~"Chicahominy",
+                           grepl("New Kent", NAMELSAD) ~"Chicahominy",
+                           grepl("Amelia", NAMELSAD) ~"Piedmont",
+                           grepl("Buckingham", NAMELSAD) ~"Piedmont",
+                           grepl("Charlotte County", NAMELSAD) ~"Piedmont",
+                           grepl("Cumberland", NAMELSAD) ~"Piedmont",
+                           grepl("Lunenburg", NAMELSAD) ~"Piedmont",
+                           grepl("Nottoway", NAMELSAD) ~"Piedmont",
+                           grepl("Prince Edward", NAMELSAD) ~"Piedmont",
+                           grepl("Roanoke city", NAMELSAD) ~"Roanoke",
+                           #grepl("Alamance", NAMELSAD) ~"North Carolina",
+                           grepl("Richmond city", NAMELSAD) ~"Richmond",
+                           grepl("Brunswick", NAMELSAD) ~"Southside",
+                           grepl("Halifax", NAMELSAD) ~"Southside",
+                           grepl("Mecklenburg", NAMELSAD) ~"Southside",
+                           grepl("Chesapeake", NAMELSAD) ~"Chesapeake",
+                           grepl("Accomack", NAMELSAD) ~"Eastern Shore",
+                           grepl("Northampton", NAMELSAD) ~"Eastern Shore",
+                           grepl("Hampton", NAMELSAD) ~"Hampton",
+                           grepl("James City", NAMELSAD) ~"Peninsula",
+                           grepl("York", NAMELSAD) ~"Peninsula",
+                           grepl("Newport News", NAMELSAD) ~"Peninsula",
+                           grepl("Poquoson", NAMELSAD) ~"Peninsula",
+                           grepl("Williamsburg", NAMELSAD) ~"Peninsula",
+                           grepl("Portsmouth", NAMELSAD) ~"Portsmouth",
+                           grepl("Norfolk", NAMELSAD) ~"Norfolk",
+                           grepl("Essex", NAMELSAD) ~"Three Rivers",
+                           grepl("Gloucester", NAMELSAD) ~"Three Rivers",
+                           grepl("King and Queen", NAMELSAD) ~"Three Rivers",
+                           grepl("King William", NAMELSAD) ~"Three Rivers",
+                           grepl("Lancaster", NAMELSAD) ~"Three Rivers",
+                           grepl("Mathews", NAMELSAD) ~"Three Rivers",
+                           grepl("Middlesex", NAMELSAD) ~"Three Rivers",
+                           grepl("Northumberland", NAMELSAD) ~"Three Rivers",
+                           grepl("Richmond County", NAMELSAD) ~"Three Rivers",
+                           grepl("Westmoreland", NAMELSAD) ~"Three Rivers",
+                           grepl("Virginia Beach", NAMELSAD) ~"Virginia Beach",
+                           grepl("Isle of Wight", NAMELSAD) ~"Western Tidewater",
+                           grepl("Southampton", NAMELSAD) ~"Western Tidewater",
+                           grepl("Franklin city", NAMELSAD) ~"Western Tidewater",
+                           grepl("Suffolk", NAMELSAD) ~"Western Tidewater",
+                           grepl("Alleghany", NAMELSAD) ~"Alleghany",
+                           grepl("Botetourt", NAMELSAD) ~"Alleghany",
+                           grepl("Craig", NAMELSAD) ~"Alleghany",
+                           grepl("Covington", NAMELSAD) ~"Alleghany",
+                           grepl("Salem", NAMELSAD) ~"Alleghany",
+                           grepl("Roanoke County", NAMELSAD) ~"Alleghany",
+                           grepl("Amherst", NAMELSAD) ~"Central Virginia",
+                           grepl("Appomattox", NAMELSAD) ~"Central Virginia",
+                           grepl("Bedford County", NAMELSAD) ~"Central Virginia",
+                           grepl("Bedford city", NAMELSAD) ~"Central Virginia",
+                           grepl("Campbell", NAMELSAD) ~"Central Virginia",
+                           grepl("Lynchburg", NAMELSAD) ~"Central Virginia",
+                           grepl("Amherst", NAMELSAD) ~"Central Virginia",
+                           grepl("Buchanan", NAMELSAD) ~"Cumberland",
+                           grepl("Dickenson", NAMELSAD) ~"Cumberland",
+                           grepl("Russell", NAMELSAD) ~"Cumberland",
+                           grepl("Tazewell", NAMELSAD) ~"Cumberland",
+                           grepl("Lee", NAMELSAD) ~"Lenowisco",
+                           grepl("Scott", NAMELSAD) ~"Lenowisco",
+                           grepl("Wise", NAMELSAD) ~"Lenowisco",
+                           grepl("Norton city", NAMELSAD) ~"Lenowisco",
+                           grepl("Bland", NAMELSAD) ~"Mount Rogers",
+                           grepl("Carroll", NAMELSAD) ~"Mount Rogers",
+                           grepl("Grayson", NAMELSAD) ~"Mount Rogers",
+                           grepl("Smyth", NAMELSAD) ~"Mount Rogers",
+                           grepl("Washington", NAMELSAD) ~"Mount Rogers",
+                           grepl("Wythe", NAMELSAD) ~"Mount Rogers",
+                           grepl("Bristol", NAMELSAD) ~"Mount Rogers",
+                           grepl("Galax", NAMELSAD) ~"Mount Rogers",
+                           grepl("Floyd", NAMELSAD) ~"New River",
+                           grepl("Giles", NAMELSAD) ~"New River",
+                           grepl("Montgomery", NAMELSAD) ~"New River",
+                           grepl("Pulaski", NAMELSAD) ~"New River",
+                           grepl("Radford city", NAMELSAD) ~"New River",
+                           grepl("Pittsylvania", NAMELSAD) ~"Pittsylvania-Danville",
+                           grepl("Danville", NAMELSAD) ~"Pittsylvania-Danville",
+                           grepl("Franklin County", NAMELSAD) ~"West Piedmont",
+                           grepl("Henry", NAMELSAD) ~"West Piedmont",
+                           grepl("Patrick", NAMELSAD) ~"West Piedmont",
+                           grepl("Martinsville", NAMELSAD) ~"West Piedmont",
+                           grepl("Alexandria", NAMELSAD) ~"Alexandria",
+                           grepl("Fairfax city", NAMELSAD) ~"Fairfax",
+                           grepl("Fairfax County", NAMELSAD) ~"Fairfax",
+                           grepl("Falls Church", NAMELSAD) ~"Fairfax",
+                           grepl("Loudoun", NAMELSAD) ~"Loudoun",
+                           grepl("Augusta", NAMELSAD) ~"Central Shenandoah",
+                           grepl("Bath", NAMELSAD) ~"Central Shenandoah",
+                           grepl("Highland", NAMELSAD) ~"Central Shenandoah",
+                           grepl("Rockbridge", NAMELSAD) ~"Central Shenandoah",
+                           grepl("Rockingham", NAMELSAD) ~"Central Shenandoah",
+                           grepl("Buena Vista", NAMELSAD) ~"Central Shenandoah",
+                           grepl("Harrisonburg", NAMELSAD) ~"Central Shenandoah",
+                           grepl("Lexington", NAMELSAD) ~"Central Shenandoah",
+                           grepl("Staunton", NAMELSAD) ~"Central Shenandoah",
+                           grepl("Waynesboro", NAMELSAD) ~"Central Shenandoah",
+                           grepl("Clarke", NAMELSAD) ~"Lord Fairfax",
+                           grepl("Frederick County", NAMELSAD) ~"Lord Fairfax",
+                           grepl("Page", NAMELSAD) ~"Lord Fairfax",
+                           grepl("Shenandoah", NAMELSAD) ~"Lord Fairfax",
+                           grepl("Warren", NAMELSAD) ~"Lord Fairfax",
+                           grepl("Winchester", NAMELSAD) ~"Lord Fairfax",
+                           grepl("Caroline", NAMELSAD) ~"Rappahannock",
+                           grepl("King George", NAMELSAD) ~"Rappahannock",
+                           grepl("Spotsylvania", NAMELSAD) ~"Rappahannock",
+                           grepl("Stafford", NAMELSAD) ~"Rappahannock",
+                           grepl("Fredericksburg", NAMELSAD) ~"Rappahannock",
+                           grepl("Culpeper", NAMELSAD) ~"Rappahannock/Rapidan",
+                           grepl("Fauquier", NAMELSAD) ~"Rappahannock/Rapidan",
+                           grepl("Madison", NAMELSAD) ~"Rappahannock/Rapidan",
+                           grepl("Orange", NAMELSAD) ~"Rappahannock/Rapidan",
+                           grepl("Rappahannock", NAMELSAD) ~"Rappahannock/Rapidan",
+                           grepl("Albemarle", NAMELSAD) ~"Blue Ridge",
+                           grepl("Fluvanna", NAMELSAD) ~"Blue Ridge",
+                           grepl("Greene", NAMELSAD) ~"Blue Ridge",
+                           grepl("Louisa", NAMELSAD) ~"Blue Ridge",
+                           grepl("Nelson", NAMELSAD) ~"Blue Ridge",
+                           grepl("Charlottesville", NAMELSAD) ~"Blue Ridge",
+                           grepl("Arlington", NAMELSAD) ~"Arlington"))
+
+HD_map1 <- HD_map %>% 
+  dplyr::select(NAMELSAD, 'Health District') 
+HD_map1
+HD_map1 <- HD_map1 %>% 
+  arrange(`Health District`)
+HD_map1
+#Turning off spherical geometry
+sf_use_s2(FALSE)
+
+#Grouping counties by Health District on the map
+HD_group_map <- HD_map %>% 
+  group_by(`Health District`) %>% 
+  summarize()
+HD_group_map
+#Counting health district data by submission
+HD_count <- alldata %>% 
+  count(`Health District`) %>% 
+  rename("Count" = "n")
+
+#Rename columns
+alldata_HD <- HD_count %>%
+  rename("region" = "Health District", "value" = "Count")
+
+#Joining Health Department data and map data
+HD_data <- HD_group_map %>% 
+  left_join(alldata_HD, by = c("Health District" = "region")) %>% 
+  dplyr :: select("Health District", value, geometry) %>% 
+  st_as_sf()  
+HD_data
+merged_HD <- fortify(HD_data, region = "Health District")
+merged_HD
+
+#Mapping health department data
+map <-ggplot(merged_HD) + 
+  geom_sf(aes(fill = value), color = NA) +
+  scale_fill_gradientn(colours = c("Blue", "Purple"),
+                       name="Submissions",
+                       na.value = "lightgrey", 
+                       values =  rescale(seq(0, 60))) +
+  geom_sf(fill = "transparent", color = "gray20", size = .5, 
+          data = HD_group_map) + 
+  labs(title = "Submissions Per Health District") +
+  coord_sf(xlim = c (-84, -75), ylim = c(35, 40)) +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.5, 'cm'),
+    legend.text=element_text(size=9), 
+    legend.background = element_rect(fill="white",
+                                  size=0.5, linetype="solid", 
+                                  colour ="Black"), 
+    legend.title = element_text(colour="black", size=10, 
+                                      face="bold"))
+map
+```
+Gray counties have no CRAB submissions.
+```{r}
+
+#table of data
+kable(HD_count) %>% 
+  kable_classic_2()
+```
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#Counting County data by submission
+Sub_county <- alldata %>% 
+  count(County) %>% 
+  rename("Count" = "n")
+
+#Rename columns
+alldata_counties <- Sub_county %>%
+  rename("region" = "County", "value" = "Count")
+
+#join the county data to the VA_map
+#Doesn't work for Richmond anymore because of Richmond City, Richmond Co. designation
+County_data <- VA_map %>% 
+  left_join(alldata_counties, by = c("NAMELSAD" = "region")) %>% 
+  dplyr :: select(NAMELSAD, value, geometry) %>% 
+  st_as_sf()  
+VA_map
+#choropleth map of county data
+ggplot(County_data) + 
+  geom_sf(aes(fill = value)) +
+  scale_fill_gradientn(colours = c("Blue", "Purple"),
+                       name="Submissions",
+                       na.value = "lightgrey", 
+                       values =  rescale(seq(0, 60))) +
+  labs(title = "Submissions Per County") +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.5, 'cm'),
+    legend.text=element_text(size=9), 
+    legend.background = element_rect(fill="white",
+                                  size=0.5, linetype="solid", 
+                                  colour ="Black"), 
+    legend.title = element_text(colour="black", size=10, 
+                                      face="bold")) +
+  coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
+
+```
+Gray counties have no CRAB submissions.
+
+```{r}
+
+#table of data
+kable(Sub_county) %>% 
+  kable_classic_2()
+```
+Note: Isolates from Alamance County are submitted by LabCorp Burlington, but are Virginia residents.
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#Count OXA genes per health district
+alldata_HD <-alldata %>% 
+  count(`Health District`, WGS.Gene) 
+alldata_HD
+# bar graph of OXA genes per health district
+ggplot(alldata_HD) +
+  geom_col(mapping = aes(y = `Health District`, fill = WGS.Gene, x = n), color = "black") +
+  xlab("Number of Isolates") +
+  scale_fill_manual(values=OXA_Palette, name = "Gene") +
+  labs(title = "OXA Genes per Health District", caption = "Graph based on all data") +
+  theme(legend.key.size = unit(.5, 'cm'),
+    legend.text=element_text(size=9), 
+    legend.position = "bottom",
+    legend.background = element_rect(fill="white",
+                                  size=0.5, linetype="solid", 
+                                  colour ="Black"), 
+    legend.title = element_text(colour="black", size=10, 
+                                      face="bold"))
+```
+Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
+
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#Subset data for OXA-23
+OXA_23 <- subset(alldata, WGS.Gene == 'OXA-23', na.rm = TRUE)
+
+#Counting health district data by OXA-23 +
+HD_oxa23_count <- OXA_23 %>% 
+  count(`Health District`) %>% 
+  rename("Count" = "n")
+
+#Rename columns
+alldata_HD2 <- HD_oxa23_count %>%
+  rename("region" = "Health District", "value" = "Count")
+alldata_HD2
+HD_group_map
+
+#Joining Health Department OXA-23 data and map data
+HD_data2 <- HD_group_map %>% 
+  left_join(alldata_HD2, by = c("Health District" = "region")) %>% 
+  dplyr :: select("Health District", value, geometry) %>% 
+  st_as_sf()  
+HD_data2
+merged_HD <- fortify(HD_data2, region = "Health District")
+#Mapping health department data
+ggplot(merged_HD) + 
+  geom_sf(aes(fill = value)) +
+  scale_fill_gradientn(colours = c("Yellow", "Red"),
+                       name="Isolates",
+                       na.value = "lightgrey", 
+                       values =  rescale(seq(0, 20))) +
+  geom_sf(fill = "transparent", color = "gray20", size = .5, 
+          data = HD_group_map) + 
+  labs(title = "OXA-23 Per Health District") +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.5, 'cm'),
+    legend.text=element_text(size=9), 
+    legend.background = element_rect(fill="white",
+                                  size=0.5, linetype="solid", 
+                                  colour ="Black"), 
+    legend.title = element_text(colour="black", size=10, 
+                                      face="bold")) +
+  coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
+
+```
+Gray counties have no CRAB submissions.
+```{r}
+
+#table of data
+kable(HD_oxa23_count) %>% 
+  kable_classic_2()
+```
+Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#Subset data for OXA-24
+OXA_24 <- subset(alldata, WGS.Gene == 'OXA-24', na.rm = TRUE)
+OXA_24
+
+#Counting health district data by OXA-24 +
+HD_oxa24_count <- OXA_24 %>% 
+  count(`Health District`) %>% 
+  rename("Count" = "n")
+
+#Rename columns
+alldata_HD2 <- HD_oxa24_count %>%
+  rename("region" = "Health District", "value" = "Count")
+alldata_HD2
+HD_group_map
+
+#Joining Health Department OXA-24 data and map data
+HD_data2 <- HD_group_map %>% 
+  left_join(alldata_HD2, by = c("Health District" = "region")) %>% 
+  dplyr :: select("Health District", value, geometry) %>% 
+  st_as_sf()  
+HD_data2
+merged_HD <- fortify(HD_data2, region = "Health District")
+
+#Mapping health department data
+ggplot(merged_HD) + 
+  geom_sf(aes(fill = value)) +
+  scale_fill_gradientn(colours = c("Light Blue", "Blue"),
+                       name="Isolates",
+                       na.value = "lightgrey", 
+                       values =  rescale(seq(0, 20))) +
+  geom_sf(fill = "transparent", color = "gray20", size = .5, 
+          data = HD_group_map) + 
+  labs(title = "OXA-24 Per Health District") +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.5, 'cm'),
+    legend.text=element_text(size=9), 
+    legend.background = element_rect(fill="white",
+                                  size=0.5, linetype="solid", 
+                                  colour ="Black"), 
+    legend.title = element_text(colour="black", size=10, 
+                                      face="bold")) +
+  coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
+```
+Gray counties have no CRAB submissions.
+```{r}
+
+#table of data
+kable(HD_oxa24_count) %>% 
+  kable_classic_2()
+```
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#Subset data for OXA-72
+OXA_72 <- subset(alldata, WGS.Gene == 'OXA-72', na.rm = TRUE)
+
+#Counting health district data by OXA-72 +
+HD_oxa_count <- OXA_72 %>% 
+  count(`Health District`)%>% 
+  rename("Count" = "n")
+
+#Rename columns
+alldata_HD2 <- HD_oxa_count %>%
+  rename("region" = "Health District", "value" = "Count")
+alldata_HD2
+
+#Joining Health Department OXA-72 data and map data
+HD_data2 <- HD_group_map %>% 
+  left_join(alldata_HD2, by = c("Health District" = "region")) %>% 
+  dplyr :: select("Health District", value, geometry) %>% 
+  st_as_sf()  
+HD_data2
+merged_HD <- fortify(HD_data2, region = "Health District")
+
+#Mapping health department data
+ggplot(merged_HD) + 
+  geom_sf(aes(fill = value)) +
+  scale_fill_gradientn(colours = c("light green", "Dark Green"),
+                       name="Isolates",
+                       na.value = "lightgrey", 
+                       values =  rescale(seq(0, 20))) +
+  geom_sf(fill = "transparent", color = "gray20", size = .5, 
+          data = HD_group_map) + 
+  labs(title = "OXA-72 Per Health District") +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.5, 'cm'),
+    legend.text=element_text(size=9), 
+    legend.background = element_rect(fill="white",
+                                  size=0.5, linetype="solid", 
+                                  colour ="Black"), 
+    legend.title = element_text(colour="black", size=10, 
+                                      face="bold")) +
+  coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
+```
+Gray counties have no CRAB submissions.
+
+```{r}
+#table of data
+kable(HD_oxa_count) %>% 
+  kable_classic_2()
+```
+Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', out.width = "95%"}
+HD_count <- alldata %>% 
+  count(`Health District`, WGS.Gene)
+HD_count_sub <- subset(HD_count, WGS.Gene != 'No OXA Genes', na.rm = TRUE)
+HD_count_sub
+
+#Bar graph of genes per county, Separated per Gene
+ggplot(HD_count_sub) +
+  geom_col(mapping = aes(y = `Health District`, fill = WGS.Gene, x = n), color = "black") +
+  xlab("Number of Isolates") +
+  scale_fill_manual(values=OXA_Palette, name ="Gene") +
+  labs(title = "OXA Genes per Health District, Separated", caption = "Graph based on all data") +
+ # gghighlight() +
+  theme(legend.position = "none", 
+           axis.text.x = element_text( size = 8),
+           axis.title = element_text( size = 8, face = "bold" ),
+           strip.text = element_text(size = 8)) +
+  facet_wrap(~WGS.Gene)
+```
+Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', out.width = "95%"}
+HD_count <- alldata %>% 
+  count(`Health District`, WGS.Gene)
+HD_count_sub <- subset(HD_count, WGS.Gene != 'No OXA Genes', na.rm = TRUE)
+HD_count_sub
+
+#Bar graph of genes per county, Separated per Gene
+ggplot(HD_count_sub) +
+  geom_col(mapping = aes(y = `Health District`, fill = WGS.Gene, x = n), color = "black") +
+  xlab("Number of Isolates") +
+  scale_fill_manual(values=OXA_Palette, name ="Gene") +
+  labs(title = "OXA Genes per Health District, Separated", caption = "Graph based on all data") +
+  gghighlight() +
+  theme(legend.position = "none", 
+           axis.text.x = element_text( size = 8),
+           axis.title = element_text( size = 8, face = "bold" ),
+           strip.text = element_text(size = 8)) +
+  facet_wrap(~WGS.Gene)
+```
+
+\newpage
+\noindent\rule{16cm}{0.4pt}
+
+### OXA Gene Frequency
+
+\noindent\rule{16cm}{0.4pt}
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#selecting sequenced isolates from all the data
+OXA_Genes <- subset(alldata, WGS.ID. != 'NA', na.rm = TRUE)
+OXA_Genes <- subset(OXA_Genes, WGS.Gene != 'No OXA Genes', na.rm = TRUE)
+#counting genes IDed by WGS
+OXA_Genes <- OXA_Genes %>%
+  group_by(WGS.Gene, Date.of.collection) %>%
+  summarize('Isolates' = n())
+
+#creating italicized title for freq plot
+plottitle2 <- expression(paste('Frequency of OXA Genes in ', 
+                               italic("Acinetobacter baumannii ")))
+
+#freq plot
+ggplot(data = OXA_Genes, mapping = aes(x = Date.of.collection,
+                                       color = WGS.Gene), by = "months") +
+  geom_freqpoly(binwidth = 30, size = 1) +
+  labs(title=expression()) +
+  theme_bw() +
+  xlab("Year") +
+  ylab("Number of Isolates") +
+  labs(title = plottitle2) +  
+  theme(legend.position = "none", 
+           axis.text.x = element_text( size = 10),
+           axis.title = element_text( size = 10, face = "bold" ),
+           strip.text = element_text(size = 10)) +
+  scale_color_discrete(name="Gene") +#Rename legend
+  facet_wrap(~ WGS.Gene)
+```
+
+\newpage
+\noindent\rule{16cm}{0.4pt}
+
+## *A. baumannii* Clusters Per NCBI
+
+\noindent\rule{16cm}{0.4pt}
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#Grouping and Summarizing the data per health district
+Cluster_only2 <- subset(alldata, SNP.cluster != 'Not Sequenced')
+Cluster_only2 <- subset(Cluster_only2, SNP.cluster != 'No Cluster')
+
+Clusters3 <- Cluster_only2 %>%
+  group_by(SNP.cluster, `Health District`, Date.of.collection) %>%
+  summarize('Isolates' = n())
+
+#bar graph of clusters per county over time
+ggplot(Clusters3) +
+  geom_histogram(aes(x=Date.of.collection, fill = `Health District`), by = "months",
+                 color = "Black") +
+  scale_fill_manual(values=Palette) +
+  facet_wrap(~SNP.cluster, ncol = 3) +
+  xlab("Year") +
+  ylab("Count") +
+  scale_y_continuous(breaks=c(1,2,3,4)) +
+  theme(axis.text.x = element_text( size = 8),
+        axis.text.y = element_text( size = 6),
+        axis.title = element_text( size = 8, face = "bold" ),
+        strip.text = element_text(size = 6),
+        legend.position = "bottom",
+        legend.key.size = unit(.2, 'cm'),
+        legend.text=element_text(size=8)) +
+   theme(panel.grid.minor = element_blank())+ #Remove grid lines for non-break numbers
+  labs(title = "Cluster Isolates per Health District")
+```
+Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2022 Cluster Isolates Identified Per Submitter", tab.id = "tab 18", label = "tab 18"}
+Clusters4 <- Cluster_only2 %>%
+  group_by(SNP.cluster, `Health District`, Submitter) 
+Clusters4
+#Genes per Cluster table
+cluster_data <- table1(~ `Health District` + Submitter | SNP.cluster, data=alldata)
+cluster_data
+table_18 <- t1flex(cluster_2022)
+autofit(table_18)
+```
+
+\newpage
+\noindent\rule{16cm}{0.4pt}
+
+### 2020
+
+\noindent\rule{16cm}{0.4pt}
+
+Routine testing was not performed on *Acinetobacter baumannii* until March 2020.  All isolates were rejected.  However, two isolates received in 2019 and two isolates received in the beginning of 2020 were sequenced even though routine testing was not performed. 
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#Divide and count CRAB sequencing total by year 2020
+crab_2020 <- alldata_sep %>%
+  filter(Year == 2020)
+
+#Selecting only 2020 data and Graphing Clusters
+crab_2020 %>% 
+  count(Submitter, SNP.cluster) %>% 
+  ggplot() +
+  geom_col(mapping = aes(y = Submitter, fill = SNP.cluster, x = n), 
+           color = "black") +
+  scale_fill_manual(values=PDS_Palette) +
+  xlab("Number of Isolates") +
+  labs(title = "2020 NCBI Clusters per Submitter") +
+  theme(legend.key.size = unit(.5, 'cm'),
+        legend.text=element_text(size=9)) +
+  guides(fill=guide_legend(title="NCBI Cluster ID")) #Rename legend
+```
+\newpage
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2020 OXA Genes Identified Per Cluster", tab.id = "tab 3", label = "tab 3"}
+#Set table settings
+set_flextable_defaults(
+  font.family = "Roboto",
+  font.size = 7, 
+  theme_fun = theme_vanilla)
+
+#Genes per cluster table
+cluster_2020 <- table1(data = crab_2020, ~SNP.cluster | WGS.Gene, overall="Total")
+cluster_tab <- t1flex(cluster_2020)
+cluster_tab
+```
+\newpage
+\noindent\rule{16cm}{0.4pt}
+
+### 2021
+
+\noindent\rule{16cm}{0.4pt}
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', out.width="100%"}
+#Divide and count CRAB sequencing total by year 2021
+crab_2021 <- alldata_sep %>%
+  filter(Year == 2021)
+
+#Selecting only 2021 data and Graphing Clusters
+crab_2021 %>% 
+  count(Submitter, SNP.cluster) %>% 
+  ggplot() +
+  geom_col(mapping = aes(y = Submitter, fill = SNP.cluster, x = n), color = "black") +
+  scale_fill_manual(values = PDS_Palette) +
+  xlab("Number of Isolates") +
+  labs(title = "2021 NCBI Clusters per Submitter") +
+  theme(legend.key.size = unit(.5, 'cm'),
+    legend.text=element_text(size=8)) +
+  guides(fill=guide_legend(title="NCBI Cluster ID")) #Rename legend
+```
+\newpage
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2021 OXA Genes Identified Per Cluster", tab.id = "tab 4", label = "tab 4"}
+#Set table settings
+set_flextable_defaults(
+  font.family = "Roboto",
+  font.size = 7, theme_fun = theme_vanilla)
+
+#Genes per cluster table
+cluster_2021 <- table1(data = crab_2021, ~ SNP.cluster | WGS.Gene, overall="Total")
+t1flex(cluster_2021)
+```
+\newpage
+\noindent\rule{16cm}{0.4pt}
+
+### 2022
+
+\noindent\rule{16cm}{0.4pt}
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+#Divide and count CRAB sequencing total by year 2022
+crab_2022 <- alldata_sep %>%
+  filter(grepl('2022EP', WGS.ID.))
+
+#Selecting only 2022 data and Graphing Clusters
+crab_2022 %>% 
+  count(Submitter, SNP.cluster) %>% 
+  ggplot() +
+  geom_col(mapping = aes(y = Submitter, fill = SNP.cluster, x = n), 
+           color = "black") +
+  scale_fill_manual(values = PDS_Palette) +
+  xlab("Number of Isolates") +
+  labs(title = "2022 NCBI Clusters per Submitter") +
+  scale_x_continuous(limits = c(0, 8)) +
+  theme(legend.key.size = unit(.5, 'cm'),
+    legend.text=element_text(size=9)) +
+  guides(fill=guide_legend(title="NCBI Cluster ID")) #Rename legend
+```
+\newpage
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2022 OXA Genes Identified Per Cluster", tab.id = "tab 5", label = "tab 5"}
+#Genes per Cluster table
+cluster_2022 <- table1( ~ SNP.cluster | WGS.Gene, data = crab_2022,  overall="Total")
+table_5 <- t1flex(cluster_2022)
+table_5
+```
+
+\noindent\rule{16cm}{0.4pt}
+##### Report Generated: `r Sys.Date()`
