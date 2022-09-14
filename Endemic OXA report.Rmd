@@ -28,6 +28,7 @@ library(sf)
 library(ggbreak)
 library(gghighlight)
 library(flextable)
+library(gtsummary)
 ```
 
 ```{r, include=FALSE}
@@ -51,7 +52,7 @@ linelist_2019 <- read_csv(line_list_2019)
 ncbi <- read_csv(NCBI_genes)
 wgs <- read_csv(CRO_WGS)
 wgs2022 <- read_csv(CRO_WGS_2022)
-VA_map <- read_sf(VA_map)
+VA_map <- read_sf(VA_map, quiet = TRUE)
 ```
 
 ```{r, include=FALSE}
@@ -502,8 +503,16 @@ alldata_sep
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 #Histogram of CRAB submissions over time by month
 plottitle <- expression(paste(italic("Acinetobacter baumannii "), 'Isolates Submitted per Month'))
-bar <- ggplot(data = alldata)+
-  geom_histogram(aes(x = Date.of.collection), by = "months", color = "#1F77B4") +
+
+alldata_year <- alldata %>% 
+  mutate(Year = case_when(grepl("2019", Date.of.collection) ~ "2019",
+                          grepl("2020", Date.of.collection) ~ "2020",
+                          grepl("2021", Date.of.collection) ~ "2021",
+                          grepl("2022", Date.of.collection) ~ "2022"))
+alldata_year
+bar <- ggplot(data = alldata_year, aes(x = Date.of.collection, fill = Year)) +
+  geom_histogram(color = "Black", bins = 30) +
+  scale_fill_manual(values = c("#1F77B4", "#AEC7EB", "#FF7F0E", "#FFBB78")) +
   scale_x_date(labels=date_format ("%b %y"), breaks=date_breaks("2 months")) +
   xlab("Month of Collection") +
   ylab("Count") +
@@ -534,24 +543,6 @@ table_1
 ```
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
-#Frequency plot of Submissions per submitter
-freqplot <- ggplot(data = alldata)+
-  geom_freqpoly(aes(x = Date.of.collection, group = Submitter, 
-                    color = Submitter), by = "months") +
-  theme(legend.position = "none", 
-           axis.text.x = element_text( size = 5),
-           axis.title = element_text( size = 8, face = "bold" ),
-           strip.text = element_text(size = 5)) +
-  xlab("Year") + 
-  ylab("Count") +
-  scale_color_manual(values=Palette) +
-  labs(title = plottitle, subtitle = "Based on Submitter") +
-  guides(x = guide_axis(angle = 45)) +
-  facet_wrap(~Submitter, ncol = 4)
-freqplot
-```
-
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 #subset only sequenced isolates
 sequenced <- subset(alldata, WGS.ID. != 'NA', na.rm = TRUE)
 
@@ -570,10 +561,15 @@ bar2 <- ggplot(data = sequenced) +
   ylab("Number of Isolates") +
   scale_fill_manual(values=OXA_Palette) +
   labs(title = plottitle1, caption = "Data for this graph includes only sequenced isolates") +
-  guides(fill=guide_legend(title="Gene")) #Rename legend +
+  guides(fill=guide_legend(title="Gene")) +
   theme(legend.position = "bottom",
         legend.key.size = unit(.5, 'cm'),
-        legend.text=element_text(size=9))
+        legend.text=element_text(size=9), 
+    legend.background = element_rect(fill="white",
+                                  size=0.5, linetype="solid", 
+                                  colour ="Black"), 
+    legend.title = element_text(colour="black", size=10, 
+                                      face="bold"))
 bar2
 ```
 \newpage
@@ -586,14 +582,17 @@ bar2
 The table and graphs below include all data. If no OXA genes were identified this could be because the isolates were not sequenced or because there were no OXA genes identified by whole genome sequencing. 
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA Genes Per Submitter", tab.id = "tab 2", label = "tab 2"}
-#Set table settings
-set_flextable_defaults(
-  font.family = "Roboto",
-  font.size = 6, theme_fun = theme_vanilla)
 
 #Submitter and Gene Table
-sub_gene_table <- table1(data = alldata, ~ Submitter | WGS.Gene, overall="Total")
-t1flex(sub_gene_table)
+alldata %>% 
+  select(Submitter, WGS.Gene) %>% 
+  tbl_summary(by = WGS.Gene) %>%
+  modify_header(label = "**Submitter**") %>% 
+  add_overall() %>% 
+  as_flex_table() %>% 
+  flextable::fontsize(size = 7) %>% 
+  fontsize(size = 7, part = "header") %>% 
+  width(j = NULL, .85, unit = "in")
 ```
 
 \noindent\rule{16cm}{0.4pt}
@@ -624,6 +623,49 @@ ggplot(alldata_HD) +
                                       face="bold"))
 
 ```
+
+Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', out.width = "95%"}
+HD_count <- alldata %>% 
+  count(`Health District`, WGS.Gene)
+HD_count_sub <- subset(HD_count, WGS.Gene != 'No OXA Genes', na.rm = TRUE)
+HD_count_sub
+
+#Bar graph of genes per county, Separated per Gene
+ggplot(HD_count_sub) +
+  geom_col(mapping = aes(y = `Health District`, fill = WGS.Gene, x = n), color = "black") +
+  xlab("Number of Isolates") +
+  scale_fill_manual(values=OXA_Palette, name ="Gene") +
+  labs(title = "OXA Genes per Health District, Separated", caption = "Graph based on all data") +
+ # gghighlight() +
+  theme(legend.position = "none", 
+           axis.text.x = element_text( size = 8),
+           axis.title = element_text( size = 8, face = "bold" ),
+           strip.text = element_text(size = 8)) +
+  facet_wrap(~WGS.Gene)
+```
+Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', out.width = "95%"}
+HD_count <- alldata %>% 
+  count(`Health District`, WGS.Gene)
+HD_count_sub <- subset(HD_count, WGS.Gene != 'No OXA Genes', na.rm = TRUE)
+HD_count_sub
+
+#Bar graph of genes per county, Separated per Gene
+ggplot(HD_count_sub) +
+  geom_col(mapping = aes(y = `Health District`, fill = WGS.Gene, x = n), color = "black") +
+  xlab("Number of Isolates") +
+  scale_fill_manual(values=OXA_Palette, name ="Gene") +
+  labs(title = "OXA Genes per Health District, Separated", caption = "Graph based on all data") +
+  gghighlight() +
+  theme(legend.position = "none", 
+           axis.text.x = element_text( size = 8),
+           axis.title = element_text( size = 8, face = "bold" ),
+           strip.text = element_text(size = 8)) +
+  facet_wrap(~WGS.Gene)
+```
+**We don't need both of the above separated graphs just wondering which graph is most beneficial with or without the totals in the background.**
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 VA_map
@@ -710,7 +752,7 @@ HD_map <- VA_map %>%
                            grepl("Lee", NAMELSAD) ~"Lenowisco",
                            grepl("Scott", NAMELSAD) ~"Lenowisco",
                            grepl("Wise", NAMELSAD) ~"Lenowisco",
-                           grepl("Norton city", NAMELSAD) ~"Lenowisco",
+                           grepl("Norton", NAMELSAD) ~"Lenowisco",
                            grepl("Bland", NAMELSAD) ~"Mount Rogers",
                            grepl("Carroll", NAMELSAD) ~"Mount Rogers",
                            grepl("Grayson", NAMELSAD) ~"Mount Rogers",
@@ -781,25 +823,29 @@ sf_use_s2(FALSE)
 #Grouping counties by Health District on the map
 HD_group_map <- HD_map %>% 
   group_by(`Health District`) %>% 
-  summarize()
+  summarise() #%>% 
+#  summarize(geometry = st_union(geometry)) 
 HD_group_map
 #Counting health district data by submission
 HD_count <- alldata %>% 
-  count(`Health District`) %>% 
-  rename("Count" = "n")
-
+  count(`Health District`) 
+HD_count
 #Rename columns
 alldata_HD <- HD_count %>%
-  rename("region" = "Health District", "value" = "Count")
+  rename("value" = "n")
 
 #Joining Health Department data and map data
 HD_data <- HD_group_map %>% 
-  left_join(alldata_HD, by = c("Health District" = "region")) %>% 
+  left_join(alldata_HD, by = "Health District") %>% 
   dplyr :: select("Health District", value, geometry) %>% 
   st_as_sf()  
 HD_data
 merged_HD <- fortify(HD_data, region = "Health District")
 merged_HD
+
+#buffering out county lines that don't match exactly
+county_buff <- st_buffer(HD_data, .001)
+HD_combined <- fortify(county_buff)
 
 #Mapping health department data
 map <-ggplot(merged_HD) + 
@@ -808,49 +854,42 @@ map <-ggplot(merged_HD) +
                        name="Submissions",
                        na.value = "lightgrey", 
                        values =  rescale(seq(0, 60))) +
-  geom_sf(fill = "transparent", color = "gray20", size = .5, 
-          data = HD_group_map) + 
-  labs(title = "Submissions Per Health District") +
-  coord_sf(xlim = c (-84, -75), ylim = c(35, 40)) +
+  geom_sf(fill = "transparent", color = "gray20", size = .2, 
+          data = HD_combined) + 
   theme(legend.position = "bottom",
         legend.key.size = unit(.5, 'cm'),
-    legend.text=element_text(size=9), 
-    legend.background = element_rect(fill="white",
+  legend.text=element_text(size=9), 
+  legend.background = element_rect(fill="white",
                                   size=0.5, linetype="solid", 
                                   colour ="Black"), 
-    legend.title = element_text(colour="black", size=10, 
-                                      face="bold"))
+  legend.title = element_text(colour="black", size=10, 
+                                      face="bold")) +
+  labs(title = "Submissions Per Health District") +
+  coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 map
 ```
 Gray counties have no CRAB submissions.
-```{r}
-
-#table of data
-kable(HD_count) %>% 
-  kable_classic_2()
-```
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 #Counting County data by submission
 Sub_county <- alldata %>% 
   count(County) %>% 
-  rename("Count" = "n")
+  rename("Submissions" = "n")
 
 #Rename columns
 alldata_counties <- Sub_county %>%
-  rename("region" = "County", "value" = "Count")
+  rename("region" = "County", "value" = "Submissions")
 
 #join the county data to the VA_map
-#Doesn't work for Richmond anymore because of Richmond City, Richmond Co. designation
 County_data <- VA_map %>% 
   left_join(alldata_counties, by = c("NAMELSAD" = "region")) %>% 
   dplyr :: select(NAMELSAD, value, geometry) %>% 
   st_as_sf()  
-VA_map
+
 #choropleth map of county data
 ggplot(County_data) + 
   geom_sf(aes(fill = value)) +
-  scale_fill_gradientn(colours = c("Blue", "Purple"),
+  scale_fill_gradientn(colours = c("Blue", "Red"),
                        name="Submissions",
                        na.value = "lightgrey", 
                        values =  rescale(seq(0, 60))) +
@@ -868,35 +907,21 @@ ggplot(County_data) +
 ```
 Gray counties have no CRAB submissions.
 
-```{r}
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "Submitters Per Health District", tab.id = "tab 3", label = "tab 3"}
+#Grouping and Summarizing submission data per health district
+HD_Submitters <- alldata %>%
+  group_by(`Health District`, Submitter) %>%
+  summarize('Isolates' = n())
 
-#table of data
-kable(Sub_county) %>% 
-  kable_classic_2()
-```
-Note: Isolates from Alamance County are submitted by LabCorp Burlington, but are Virginia residents.
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
-#Count OXA genes per health district
-alldata_HD <-alldata %>% 
-  count(`Health District`, WGS.Gene) 
-alldata_HD
-# bar graph of OXA genes per health district
-ggplot(alldata_HD) +
-  geom_col(mapping = aes(y = `Health District`, fill = WGS.Gene, x = n), color = "black") +
-  xlab("Number of Isolates") +
-  scale_fill_manual(values=OXA_Palette, name = "Gene") +
-  labs(title = "OXA Genes per Health District", caption = "Graph based on all data") +
-  theme(legend.key.size = unit(.5, 'cm'),
-    legend.text=element_text(size=9), 
-    legend.position = "bottom",
-    legend.background = element_rect(fill="white",
-                                  size=0.5, linetype="solid", 
-                                  colour ="Black"), 
-    legend.title = element_text(colour="black", size=10, 
-                                      face="bold"))
+
+#Submitters in Health District Table
+table_3 <- flextable(HD_Submitters)
+table_3 <- merge_at(table_3, i = 2:3, j = 1 , part = "body")
+table_3 <- merge_at(table_3, i = 7:8, j = 1 , part = "body")
+table_3 <- merge_at(table_3, i = 15:16, j = 1 , part = "body")
+table_3
 ```
 Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
-
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 #Subset data for OXA-23
@@ -904,12 +929,11 @@ OXA_23 <- subset(alldata, WGS.Gene == 'OXA-23', na.rm = TRUE)
 
 #Counting health district data by OXA-23 +
 HD_oxa23_count <- OXA_23 %>% 
-  count(`Health District`) %>% 
-  rename("Count" = "n")
+  count(`Health District`)
 
 #Rename columns
 alldata_HD2 <- HD_oxa23_count %>%
-  rename("region" = "Health District", "value" = "Count")
+  rename("region" = "Health District", "value" = "n")
 alldata_HD2
 HD_group_map
 
@@ -920,15 +944,20 @@ HD_data2 <- HD_group_map %>%
   st_as_sf()  
 HD_data2
 merged_HD <- fortify(HD_data2, region = "Health District")
+
+#buffering out county lines that don't match exactly
+county_buff <- st_buffer(HD_data2, .001)
+HD_combined1 <- fortify(county_buff)
+
 #Mapping health department data
 ggplot(merged_HD) + 
-  geom_sf(aes(fill = value)) +
+  geom_sf(aes(fill = value), color = NA) +
   scale_fill_gradientn(colours = c("Yellow", "Red"),
                        name="Isolates",
                        na.value = "lightgrey", 
                        values =  rescale(seq(0, 20))) +
-  geom_sf(fill = "transparent", color = "gray20", size = .5, 
-          data = HD_group_map) + 
+  geom_sf(fill = "transparent", color = "gray20", size = .2, 
+          data = HD_combined1) + 
   labs(title = "OXA-23 Per Health District") +
   theme(legend.position = "bottom",
         legend.key.size = unit(.5, 'cm'),
@@ -942,11 +971,11 @@ ggplot(merged_HD) +
 
 ```
 Gray counties have no CRAB submissions.
-```{r}
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-23 Positive Isolates Per Health District", tab.id = "tab 4", label = "tab 4"}
 
 #table of data
-kable(HD_oxa23_count) %>% 
-  kable_classic_2()
+table_4 <- flextable(HD_oxa23_count)
+table_4
 ```
 Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
 
@@ -957,12 +986,11 @@ OXA_24
 
 #Counting health district data by OXA-24 +
 HD_oxa24_count <- OXA_24 %>% 
-  count(`Health District`) %>% 
-  rename("Count" = "n")
+  count(`Health District`)
 
 #Rename columns
 alldata_HD2 <- HD_oxa24_count %>%
-  rename("region" = "Health District", "value" = "Count")
+  rename("region" = "Health District", "value" = "n")
 alldata_HD2
 HD_group_map
 
@@ -974,15 +1002,19 @@ HD_data2 <- HD_group_map %>%
 HD_data2
 merged_HD <- fortify(HD_data2, region = "Health District")
 
+#buffering out county lines that don't match exactly
+county_buff <- st_buffer(merged_HD, .001)
+HD_combined1 <- fortify(county_buff)
+
 #Mapping health department data
 ggplot(merged_HD) + 
-  geom_sf(aes(fill = value)) +
+  geom_sf(aes(fill = value), color = NA) +
   scale_fill_gradientn(colours = c("Light Blue", "Blue"),
                        name="Isolates",
                        na.value = "lightgrey", 
                        values =  rescale(seq(0, 20))) +
-  geom_sf(fill = "transparent", color = "gray20", size = .5, 
-          data = HD_group_map) + 
+  geom_sf(fill = "transparent", color = "gray20", size = .2, 
+          data = HD_combined1) + 
   labs(title = "OXA-24 Per Health District") +
   theme(legend.position = "bottom",
         legend.key.size = unit(.5, 'cm'),
@@ -995,11 +1027,11 @@ ggplot(merged_HD) +
   coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 ```
 Gray counties have no CRAB submissions.
-```{r}
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-24 Positive Isolates Per Health District", tab.id = "tab 5", label = "tab 5"}
 
 #table of data
-kable(HD_oxa24_count) %>% 
-  kable_classic_2()
+table_5 <- flextable(HD_oxa24_count)
+table_5
 ```
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
@@ -1008,12 +1040,11 @@ OXA_72 <- subset(alldata, WGS.Gene == 'OXA-72', na.rm = TRUE)
 
 #Counting health district data by OXA-72 +
 HD_oxa_count <- OXA_72 %>% 
-  count(`Health District`)%>% 
-  rename("Count" = "n")
+  count(`Health District`)
 
 #Rename columns
 alldata_HD2 <- HD_oxa_count %>%
-  rename("region" = "Health District", "value" = "Count")
+  rename("region" = "Health District", "value" = "n")
 alldata_HD2
 
 #Joining Health Department OXA-72 data and map data
@@ -1024,15 +1055,19 @@ HD_data2 <- HD_group_map %>%
 HD_data2
 merged_HD <- fortify(HD_data2, region = "Health District")
 
+#buffering out county lines that don't match exactly
+county_buff <- st_buffer(merged_HD, .001)
+HD_combined1 <- fortify(county_buff)
+
 #Mapping health department data
 ggplot(merged_HD) + 
-  geom_sf(aes(fill = value)) +
+  geom_sf(aes(fill = value), color = NA) +
   scale_fill_gradientn(colours = c("light green", "Dark Green"),
                        name="Isolates",
                        na.value = "lightgrey", 
                        values =  rescale(seq(0, 20))) +
-  geom_sf(fill = "transparent", color = "gray20", size = .5, 
-          data = HD_group_map) + 
+  geom_sf(fill = "transparent", color = "gray20", size = .2, 
+          data = HD_combined1) +
   labs(title = "OXA-72 Per Health District") +
   theme(legend.position = "bottom",
         legend.key.size = unit(.5, 'cm'),
@@ -1045,54 +1080,13 @@ ggplot(merged_HD) +
   coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 ```
 Gray counties have no CRAB submissions.
-
-```{r}
+\newpage
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-72 Positive Isolates Per Health District", tab.id = "tab 6", label = "tab 6"}
 #table of data
-kable(HD_oxa_count) %>% 
-  kable_classic_2()
+table_6 <- flextable(HD_oxa_count)
+table_6
 ```
 Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
-
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', out.width = "95%"}
-HD_count <- alldata %>% 
-  count(`Health District`, WGS.Gene)
-HD_count_sub <- subset(HD_count, WGS.Gene != 'No OXA Genes', na.rm = TRUE)
-HD_count_sub
-
-#Bar graph of genes per county, Separated per Gene
-ggplot(HD_count_sub) +
-  geom_col(mapping = aes(y = `Health District`, fill = WGS.Gene, x = n), color = "black") +
-  xlab("Number of Isolates") +
-  scale_fill_manual(values=OXA_Palette, name ="Gene") +
-  labs(title = "OXA Genes per Health District, Separated", caption = "Graph based on all data") +
- # gghighlight() +
-  theme(legend.position = "none", 
-           axis.text.x = element_text( size = 8),
-           axis.title = element_text( size = 8, face = "bold" ),
-           strip.text = element_text(size = 8)) +
-  facet_wrap(~WGS.Gene)
-```
-Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
-
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', out.width = "95%"}
-HD_count <- alldata %>% 
-  count(`Health District`, WGS.Gene)
-HD_count_sub <- subset(HD_count, WGS.Gene != 'No OXA Genes', na.rm = TRUE)
-HD_count_sub
-
-#Bar graph of genes per county, Separated per Gene
-ggplot(HD_count_sub) +
-  geom_col(mapping = aes(y = `Health District`, fill = WGS.Gene, x = n), color = "black") +
-  xlab("Number of Isolates") +
-  scale_fill_manual(values=OXA_Palette, name ="Gene") +
-  labs(title = "OXA Genes per Health District, Separated", caption = "Graph based on all data") +
-  gghighlight() +
-  theme(legend.position = "none", 
-           axis.text.x = element_text( size = 8),
-           axis.title = element_text( size = 8, face = "bold" ),
-           strip.text = element_text(size = 8)) +
-  facet_wrap(~WGS.Gene)
-```
 
 \newpage
 \noindent\rule{16cm}{0.4pt}
@@ -1109,7 +1103,15 @@ OXA_Genes <- subset(OXA_Genes, WGS.Gene != 'No OXA Genes', na.rm = TRUE)
 OXA_Genes <- OXA_Genes %>%
   group_by(WGS.Gene, Date.of.collection) %>%
   summarize('Isolates' = n())
+OXAmedian <- OXA_Genes %>%
+    group_by(WGS.Gene) %>%
+    summarise(mediany = median(Isolates))
+OXAmedian
 
+OXAmean <- OXA_Genes %>%
+    group_by(WGS.Gene) %>%
+    summarise(meanY = mean(Isolates))
+OXAmean
 #creating italicized title for freq plot
 plottitle2 <- expression(paste('Frequency of OXA Genes in ', 
                                italic("Acinetobacter baumannii ")))
@@ -1127,10 +1129,13 @@ ggplot(data = OXA_Genes, mapping = aes(x = Date.of.collection,
            axis.text.x = element_text( size = 10),
            axis.title = element_text( size = 10, face = "bold" ),
            strip.text = element_text(size = 10)) +
-  scale_color_discrete(name="Gene") +#Rename legend
+  geom_hline(data = OXAmedian, aes(yintercept = mediany), color = "red") +
+  scale_color_discrete(name="Gene") + #Rename legend
+  scale_color_manual(values = c("#2CA02C", "#1F77B4", 
+                 "#FF7F0E", "#FFBB78")) +
   facet_wrap(~ WGS.Gene)
 ```
-
+The average number of OXA genes detected per month is 1.  **Could we use this graph to determine endemic levels?**
 \newpage
 \noindent\rule{16cm}{0.4pt}
 
@@ -1168,17 +1173,6 @@ ggplot(Clusters3) +
 ```
 Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
 
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2022 Cluster Isolates Identified Per Submitter", tab.id = "tab 18", label = "tab 18"}
-Clusters4 <- Cluster_only2 %>%
-  group_by(SNP.cluster, `Health District`, Submitter) 
-Clusters4
-#Genes per Cluster table
-cluster_data <- table1(~ `Health District` + Submitter | SNP.cluster, data=alldata)
-cluster_data
-table_18 <- t1flex(cluster_2022)
-autofit(table_18)
-```
-
 \newpage
 \noindent\rule{16cm}{0.4pt}
 
@@ -1206,18 +1200,21 @@ crab_2020 %>%
         legend.text=element_text(size=9)) +
   guides(fill=guide_legend(title="NCBI Cluster ID")) #Rename legend
 ```
+The PDS Cluster numbers are assigned by The National Center for Biotechnology Information (NCBI).  They have been color coded to assist in identifying clusters from one year to the next in this and the following graphs of yearly data.
+
 \newpage
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2020 OXA Genes Identified Per Cluster", tab.id = "tab 3", label = "tab 3"}
-#Set table settings
-set_flextable_defaults(
-  font.family = "Roboto",
-  font.size = 7, 
-  theme_fun = theme_vanilla)
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2020 OXA Genes Identified Per Cluster", tab.id = "tab 7", label = "tab 7"}
 
 #Genes per cluster table
-cluster_2020 <- table1(data = crab_2020, ~SNP.cluster | WGS.Gene, overall="Total")
-cluster_tab <- t1flex(cluster_2020)
-cluster_tab
+crab_2020 %>% 
+  select(SNP.cluster, WGS.Gene) %>% 
+  tbl_summary(by = WGS.Gene) %>%
+  modify_header(label = "**NCBI Cluster**") %>% 
+  add_overall() %>% 
+  as_flex_table() %>% 
+  flextable::fontsize(size = 7) %>% 
+  fontsize(size = 7, part = "header") %>% 
+  width(j = NULL, .85, unit = "in")
 ```
 \newpage
 \noindent\rule{16cm}{0.4pt}
@@ -1244,15 +1241,18 @@ crab_2021 %>%
   guides(fill=guide_legend(title="NCBI Cluster ID")) #Rename legend
 ```
 \newpage
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2021 OXA Genes Identified Per Cluster", tab.id = "tab 4", label = "tab 4"}
-#Set table settings
-set_flextable_defaults(
-  font.family = "Roboto",
-  font.size = 7, theme_fun = theme_vanilla)
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2021 OXA Genes Identified Per Cluster", tab.id = "tab 8", label = "tab 8"}
 
 #Genes per cluster table
-cluster_2021 <- table1(data = crab_2021, ~ SNP.cluster | WGS.Gene, overall="Total")
-t1flex(cluster_2021)
+crab_2021 %>% 
+  select(SNP.cluster, WGS.Gene) %>% 
+  tbl_summary(by = WGS.Gene) %>%
+  modify_header(label = "**NCBI Cluster**") %>% 
+  add_overall() %>% 
+  as_flex_table() %>% 
+  flextable::fontsize(size = 7) %>% 
+  fontsize(size = 7, part = "header") %>% 
+  width(j = NULL, .85, unit = "in")
 ```
 \newpage
 \noindent\rule{16cm}{0.4pt}
@@ -1281,11 +1281,17 @@ crab_2022 %>%
   guides(fill=guide_legend(title="NCBI Cluster ID")) #Rename legend
 ```
 \newpage
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2022 OXA Genes Identified Per Cluster", tab.id = "tab 5", label = "tab 5"}
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "left", tab.cap = "2022 OXA Genes Identified Per Cluster", tab.id = "tab 9", label = "tab 9"}
 #Genes per Cluster table
-cluster_2022 <- table1( ~ SNP.cluster | WGS.Gene, data = crab_2022,  overall="Total")
-table_5 <- t1flex(cluster_2022)
-table_5
+crab_2022 %>% 
+  select(SNP.cluster, WGS.Gene) %>% 
+  tbl_summary(by = WGS.Gene) %>%
+  modify_header(label = "**NCBI Cluster**") %>% 
+  add_overall() %>% 
+  as_flex_table() %>% 
+  flextable::fontsize(size = 7) %>% 
+  fontsize(size = 7, part = "header") %>% 
+  width(j = NULL, 1, unit = "in") 
 ```
 
 \noindent\rule{16cm}{0.4pt}
