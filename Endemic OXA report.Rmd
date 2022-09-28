@@ -22,8 +22,8 @@ library(scales)
 library(tidyverse)
 library(gridExtra)
 library(lubridate)
-library(table1)
-library(kableExtra)
+#library(table1)
+#library(kableExtra)
 library(sf)
 library(ggbreak)
 library(gghighlight)
@@ -495,9 +495,7 @@ alldata_sep
 ```
 
 \noindent\rule{16cm}{0.4pt}
-
 ### CRAB = Carbapenem Resistant *Acinetobacter baumannii*
-
 \noindent\rule{16cm}{0.4pt}
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
@@ -572,11 +570,9 @@ bar2 <- ggplot(data = sequenced) +
                                       face="bold"))
 bar2
 ```
-\newpage
+
 \noindent\rule{16cm}{0.4pt}
-
 ### OXA Genes Per Submitter
-
 \noindent\rule{16cm}{0.4pt}
 
 The table and graphs below include all data. If no OXA genes were identified this could be because the isolates were not sequenced or because there were no OXA genes identified by whole genome sequencing. 
@@ -595,10 +591,9 @@ alldata %>%
   width(j = NULL, .85, unit = "in")
 ```
 
+\newpage
 \noindent\rule{16cm}{0.4pt}
-
 ### Per Health District Data
-
 \noindent\rule{16cm}{0.4pt}
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
@@ -645,27 +640,6 @@ ggplot(HD_count_sub) +
   facet_wrap(~WGS.Gene)
 ```
 Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
-
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', out.width = "95%"}
-HD_count <- alldata %>% 
-  count(`Health District`, WGS.Gene)
-HD_count_sub <- subset(HD_count, WGS.Gene != 'No OXA Genes', na.rm = TRUE)
-HD_count_sub
-
-#Bar graph of genes per county, Separated per Gene
-ggplot(HD_count_sub) +
-  geom_col(mapping = aes(y = `Health District`, fill = WGS.Gene, x = n), color = "black") +
-  xlab("Number of Isolates") +
-  scale_fill_manual(values=OXA_Palette, name ="Gene") +
-  labs(title = "OXA Genes per Health District, Separated", caption = "Graph based on all data") +
-  gghighlight() +
-  theme(legend.position = "none", 
-           axis.text.x = element_text( size = 8),
-           axis.title = element_text( size = 8, face = "bold" ),
-           strip.text = element_text(size = 8)) +
-  facet_wrap(~WGS.Gene)
-```
-**We don't need both of the above separated graphs just wondering which graph is most beneficial with or without the totals in the background.**
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 VA_map
@@ -906,6 +880,7 @@ ggplot(County_data) +
 
 ```
 Gray counties have no CRAB submissions.
+\newpage
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "Submitters Per Health District", tab.id = "tab 3", label = "tab 3"}
 #Grouping and Summarizing submission data per health district
@@ -922,6 +897,8 @@ table_3 <- merge_at(table_3, i = 15:16, j = 1 , part = "body")
 table_3
 ```
 Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
+
+\newpage
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 #Subset data for OXA-23
@@ -971,6 +948,7 @@ ggplot(merged_HD) +
 
 ```
 Gray counties have no CRAB submissions.
+
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-23 Positive Isolates Per Health District", tab.id = "tab 4", label = "tab 4"}
 
 #table of data
@@ -978,6 +956,8 @@ table_4 <- flextable(HD_oxa23_count)
 table_4
 ```
 Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
+
+\newpage
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 #Subset data for OXA-24
@@ -1027,12 +1007,15 @@ ggplot(merged_HD) +
   coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 ```
 Gray counties have no CRAB submissions.
+
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-24 Positive Isolates Per Health District", tab.id = "tab 5", label = "tab 5"}
 
 #table of data
 table_5 <- flextable(HD_oxa24_count)
 table_5
 ```
+
+\newpage
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 #Subset data for OXA-72
@@ -1080,7 +1063,7 @@ ggplot(merged_HD) +
   coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 ```
 Gray counties have no CRAB submissions.
-\newpage
+
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-72 Positive Isolates Per Health District", tab.id = "tab 6", label = "tab 6"}
 #table of data
 table_6 <- flextable(HD_oxa_count)
@@ -1090,9 +1073,7 @@ Isolates from North Carolina are submitted by LabCorp Burlington, but are Virgin
 
 \newpage
 \noindent\rule{16cm}{0.4pt}
-
 ### OXA Gene Frequency
-
 \noindent\rule{16cm}{0.4pt}
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
@@ -1135,12 +1116,10 @@ ggplot(data = OXA_Genes, mapping = aes(x = Date.of.collection,
                  "#FF7F0E", "#FFBB78")) +
   facet_wrap(~ WGS.Gene)
 ```
-The average number of OXA genes detected per month is 1.  **Could we use this graph to determine endemic levels?**
+The average number of OXA gene positive isolates detected per month is represented by the red line.  This graph could be used to determine endemic levels.
 \newpage
 \noindent\rule{16cm}{0.4pt}
-
 ## *A. baumannii* Clusters Per NCBI
-
 \noindent\rule{16cm}{0.4pt}
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
@@ -1150,34 +1129,37 @@ Cluster_only2 <- subset(Cluster_only2, SNP.cluster != 'No Cluster')
 
 Clusters3 <- Cluster_only2 %>%
   group_by(SNP.cluster, `Health District`, Date.of.collection) %>%
-  summarize('Isolates' = n())
+  summarize('Isolates' = n()) %>%
+  ungroup() %>%
+  group_by (SNP.cluster) %>%
+  mutate(total_isolates = sum(Isolates)) %>%
+  filter(total_isolates > 2)
+Clusters3
 
 #bar graph of clusters per county over time
 ggplot(Clusters3) +
   geom_histogram(aes(x=Date.of.collection, fill = `Health District`), by = "months",
                  color = "Black") +
   scale_fill_manual(values=Palette) +
-  facet_wrap(~SNP.cluster, ncol = 3) +
-  xlab("Year") +
-  ylab("Count") +
+  facet_grid(SNP.cluster ~ ., scales = "free", space = "free") +
+  xlab("Month of Collection") +
+  ylab("Number of Isolates") +
   scale_y_continuous(breaks=c(1,2,3,4)) +
   theme(axis.text.x = element_text( size = 8),
-        axis.text.y = element_text( size = 6),
+        axis.text.y = element_text( size = 8),
         axis.title = element_text( size = 8, face = "bold" ),
-        strip.text = element_text(size = 6),
         legend.position = "bottom",
         legend.key.size = unit(.2, 'cm'),
-        legend.text=element_text(size=8)) +
+        legend.text=element_text(size=8),
+        strip.text.y = element_text(angle = 0, size = 8)) +
    theme(panel.grid.minor = element_blank())+ #Remove grid lines for non-break numbers
   labs(title = "Cluster Isolates per Health District")
 ```
-Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
+Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents. The PDS Cluster ID numbers are assigned by the National Center for Biotechnology Information (NCBI). Any clusters with less than 3 Virginia isolates have been removed from this graph.
 
 \newpage
 \noindent\rule{16cm}{0.4pt}
-
 ### 2020
-
 \noindent\rule{16cm}{0.4pt}
 
 Routine testing was not performed on *Acinetobacter baumannii* until March 2020.  All isolates were rejected.  However, two isolates received in 2019 and two isolates received in the beginning of 2020 were sequenced even though routine testing was not performed. 
@@ -1200,7 +1182,7 @@ crab_2020 %>%
         legend.text=element_text(size=9)) +
   guides(fill=guide_legend(title="NCBI Cluster ID")) #Rename legend
 ```
-The PDS Cluster numbers are assigned by The National Center for Biotechnology Information (NCBI).  They have been color coded to assist in identifying clusters from one year to the next in this and the following graphs of yearly data.
+The PDS Cluster numbers are assigned by the National Center for Biotechnology Information (NCBI).  They have been color coded to assist in identifying clusters from one year to the next in this and the following graphs of yearly data.
 
 \newpage
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2020 OXA Genes Identified Per Cluster", tab.id = "tab 7", label = "tab 7"}
@@ -1218,9 +1200,7 @@ crab_2020 %>%
 ```
 \newpage
 \noindent\rule{16cm}{0.4pt}
-
 ### 2021
-
 \noindent\rule{16cm}{0.4pt}
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', out.width="100%"}
@@ -1256,9 +1236,7 @@ crab_2021 %>%
 ```
 \newpage
 \noindent\rule{16cm}{0.4pt}
-
 ### 2022
-
 \noindent\rule{16cm}{0.4pt}
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
