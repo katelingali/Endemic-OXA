@@ -947,7 +947,6 @@ ggplot(merged_HD) +
   coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 
 ```
-Gray counties have no CRAB submissions.
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-23 Positive Isolates Per Health District", tab.id = "tab 4", label = "tab 4"}
 
@@ -1006,7 +1005,6 @@ ggplot(merged_HD) +
                                       face="bold")) +
   coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 ```
-Gray counties have no CRAB submissions.
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-24 Positive Isolates Per Health District", tab.id = "tab 5", label = "tab 5"}
 
@@ -1062,7 +1060,6 @@ ggplot(merged_HD) +
                                       face="bold")) +
   coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 ```
-Gray counties have no CRAB submissions.
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-72 Positive Isolates Per Health District", tab.id = "tab 6", label = "tab 6"}
 #table of data
