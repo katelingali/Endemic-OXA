@@ -66,22 +66,23 @@ OXA_Palette <- c('OXA-23' = "#1F77B4",
                  'OXA-72' = "#FFBB78", 
                  'Other OXA' = "#2CA02C", 
                  "No OXA Genes" = "#7F7F7F")
-PDS_Palette <- c("PDS000047378.11" = "#1F77B4",
-                 "PDS000075026.12" = "#AEC7EB",
-                 "PDS000083246.22" = "#FF7F0E",
-                 "PDS000107407.2" = "#FFBB78",
-                 "PDS000107408.2" = "#2CA02C",
-                 "PDS000108570.10" = "#98DF8A",
-                 "PDS000111517.1" = "#D62728",
+PDS_Palette <- c("PDS000047378.12" = "#1F77B4",
+                 "PDS000075026.16" = "#AEC7EB",
+                 "PDS000083246.27" = "#FF7F0E",
+                 "PDS000107407.4" = "#FFBB78",
+                 "PDS000107408.3" = "#2CA02C",
+                 "PDS000108570.17" = "#98DF8A",
+                 "PDS000111517.2" = "#D62728",
+                 "PDS000084878.14" = "#FF9896",
                  "PDS000112545.1" = "#9467BD",
-                 "PDS000075027.15" = "#C5B0D5",
-                 "PDS000094961.54" = "#8C564B",
-                 "PDS000105896.9" = "#C49C94",
-                 "PDS000098000.5" = "#E377C2",
+                 "PDS000075027.18" = "#C5B0D5",
+                 "PDS000094961.72" = "#8C564B",
+                 "PDS000105896.15" = "#C49C94",
+                 "PDS000098000.9" = "#E377C2",
                  "PDS000104873.2" = "#F7B6D2",
-                 "PDS000112895.3" = "#17BECF",
+                 "PDS000112895.20" = "#17BECF",
                  "PDS000104060.1" = "#9EDAE5",
-                 "PDS000075027.15" = "#BCBD22",
+                 "PDS000120625.1" = "#BCBD22",
                  "PDS000078826.1" = "#DBDB8D",
                  "No Cluster" = "#7F7F7F",
                  "Not Sequenced" = "#C7C7C7")
@@ -98,7 +99,7 @@ linelist_2022 <- linelist_2022 %>% #Selecting and renaming columns
                 'Date received at DCLS', 'Source') %>%
   rename('R number' = 'DCLS ID', 'Organism' = 'DCLS - ID confirmation', 
          'Receive Date' = 'Date received at DCLS')
-
+linelist_2022
 total_2022 <- count(linelist_2022)
 total_2022
 
@@ -207,6 +208,7 @@ wgsncbi
 ```{r, include=FALSE}
 #merge the linelist dataframe with the ncbiwgs dataframe
 alldata <- merge(wgsncbi, linelistall, by = 'R number', all=TRUE) 
+alldata
 ```
 
 ```{r, include=FALSE}
@@ -498,6 +500,8 @@ alldata_sep
 ### CRAB = Carbapenem Resistant *Acinetobacter baumannii*
 \noindent\rule{16cm}{0.4pt}
 
+Routine testing was not performed on *Acinetobacter baumannii* until March 2020.  All isolates were rejected.  However, two isolates received in 2019 and two isolates received in the beginning of 2020 were sequenced even though routine testing was not performed. 
+
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 #Histogram of CRAB submissions over time by month
 plottitle <- expression(paste(italic("Acinetobacter baumannii "), 'Isolates Submitted per Month'))
@@ -570,6 +574,7 @@ bar2 <- ggplot(data = sequenced) +
                                       face="bold"))
 bar2
 ```
+OXA-72 is an OXA-24 like gene. For PCR testing both genes will result as OXA-24 positive.  For this report they have been divided up to show the occurrence of each gene in the state of Virginia.  There have been no cases of OXA-58 or OXA-235 identified in the state of Virginia to date.
 
 \noindent\rule{16cm}{0.4pt}
 ### OXA Genes Per Submitter
@@ -842,7 +847,7 @@ map <-ggplot(merged_HD) +
   coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 map
 ```
-Gray counties have no CRAB submissions.
+Gray districts have no CRAB submissions.
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 #Counting County data by submission
@@ -947,6 +952,7 @@ ggplot(merged_HD) +
   coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 
 ```
+Gray districts have no OXA-23 genes identified.
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-23 Positive Isolates Per Health District", tab.id = "tab 4", label = "tab 4"}
 
@@ -1005,6 +1011,7 @@ ggplot(merged_HD) +
                                       face="bold")) +
   coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 ```
+Gray districts have no OXA-24 genes identified.
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-24 Positive Isolates Per Health District", tab.id = "tab 5", label = "tab 5"}
 
@@ -1012,6 +1019,7 @@ ggplot(merged_HD) +
 table_5 <- flextable(HD_oxa24_count)
 table_5
 ```
+Isolates from North Carolina are submitted by LabCorp Burlington, but are Virginia residents.
 
 \newpage
 
@@ -1060,6 +1068,7 @@ ggplot(merged_HD) +
                                       face="bold")) +
   coord_sf(xlim = c (-84, -75), ylim = c(35, 40))
 ```
+Gray districts have no OXA-72 genes identified.
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "OXA-72 Positive Isolates Per Health District", tab.id = "tab 6", label = "tab 6"}
 #table of data
@@ -1130,13 +1139,12 @@ Clusters3 <- Cluster_only2 %>%
   ungroup() %>%
   group_by (SNP.cluster) %>%
   mutate(total_isolates = sum(Isolates)) %>%
-  filter(total_isolates > 2)
-Clusters3
+  filter(total_isolates >= 3)
 
 #bar graph of clusters per county over time
 ggplot(Clusters3) +
   geom_histogram(aes(x=Date.of.collection, fill = `Health District`), by = "months",
-                 color = "Black") +
+                 color = "Black", binwidth= 31) +
   scale_fill_manual(values=Palette) +
   facet_grid(SNP.cluster ~ ., scales = "free", space = "free") +
   xlab("Month of Collection") +
@@ -1159,8 +1167,6 @@ Isolates from North Carolina are submitted by LabCorp Burlington, but are Virgin
 ### 2020
 \noindent\rule{16cm}{0.4pt}
 
-Routine testing was not performed on *Acinetobacter baumannii* until March 2020.  All isolates were rejected.  However, two isolates received in 2019 and two isolates received in the beginning of 2020 were sequenced even though routine testing was not performed. 
-
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 #Divide and count CRAB sequencing total by year 2020
 crab_2020 <- alldata_sep %>%
@@ -1174,7 +1180,7 @@ crab_2020 %>%
            color = "black") +
   scale_fill_manual(values=PDS_Palette) +
   xlab("Number of Isolates") +
-  labs(title = "2020 NCBI Clusters per Submitter") +
+  labs(title = "2020 Clusters per Submitter") +
   theme(legend.key.size = unit(.5, 'cm'),
         legend.text=element_text(size=9)) +
   guides(fill=guide_legend(title="NCBI Cluster ID")) #Rename legend
@@ -1212,7 +1218,7 @@ crab_2021 %>%
   geom_col(mapping = aes(y = Submitter, fill = SNP.cluster, x = n), color = "black") +
   scale_fill_manual(values = PDS_Palette) +
   xlab("Number of Isolates") +
-  labs(title = "2021 NCBI Clusters per Submitter") +
+  labs(title = "2021 Clusters per Submitter") +
   theme(legend.key.size = unit(.5, 'cm'),
     legend.text=element_text(size=8)) +
   guides(fill=guide_legend(title="NCBI Cluster ID")) #Rename legend
@@ -1240,7 +1246,7 @@ crab_2021 %>%
 #Divide and count CRAB sequencing total by year 2022
 crab_2022 <- alldata_sep %>%
   filter(grepl('2022EP', WGS.ID.))
-
+crab_2022
 #Selecting only 2022 data and Graphing Clusters
 crab_2022 %>% 
   count(Submitter, SNP.cluster) %>% 
@@ -1249,10 +1255,11 @@ crab_2022 %>%
            color = "black") +
   scale_fill_manual(values = PDS_Palette) +
   xlab("Number of Isolates") +
-  labs(title = "2022 NCBI Clusters per Submitter") +
+  labs(title = "2022 Clusters per Submitter") +
   scale_x_continuous(limits = c(0, 8)) +
   theme(legend.key.size = unit(.5, 'cm'),
-    legend.text=element_text(size=9)) +
+    legend.text=element_text(size=9),
+     plot.title = element_text(hjust = 0)) +
   guides(fill=guide_legend(title="NCBI Cluster ID")) #Rename legend
 ```
 \newpage
