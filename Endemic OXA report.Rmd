@@ -1,9 +1,9 @@
 ---
-title: "Endemic OXA Cumulative Report"
+title: "*Acinetobacter baummanni* OXA Gene Annual Report"
 output: pdf_document
 ---
 ---
-title: "Endemic OXA Cumulative Report"
+title: "*Acinetobacter baummanni* OXA Gene Annual Report"
 output:
   pdf_document: default
   html_document: default
@@ -41,7 +41,7 @@ line_list_2023 <- file.choose()
 CRO_WGS <- file.choose()
 #CRO_WGS_2022 <- file.choose()
 NCBI_genes <- file.choose() #remove ","SRS*" in isolate identifiers in excel prior to uploading
-#choose SDE_USDC_CENSUS_VA_COUNTY.shp in downloads or SP                                                                                                                                
+#choose SDE_USDC_CENSUS_VA_COUNTY excel file in downloads or on thumb drive                                                                                                                         
 VA_map <- file.choose()
 ```
 
@@ -85,7 +85,7 @@ Cluster_Palette <- c("VA_AB_OXA24_220914 \n or VA_AB_OXA24_220120" = "#1F77B4",
                    "VA_AB_OXA23_230125" = "#E377C2",
                    "VA_AB_OXA23NDM_240106" = "#F7B6D2",
                    "VA_AB_OXA23_221103" = "#7F7F7F",
-                   "VA_AB_OXA23_230424" = "#FFD966")
+                   "VA_AB_OXA23_230424-2" = "#FFD966")
 ```
 
 ```{r, warning=FALSE, include=FALSE}
@@ -550,12 +550,12 @@ CRAB Submission.................................................................
 blaOXA genes identified over time.....................................................................3  
 blaOXA genes identified per submitter.................................................................4  
 blaOXA genes per Virginia Health District............................................................6       
-blaOXA gene frequency..............................................................................17  
-CRAB clusters per NCBI.............................................................................18  
-2020 data............................................................................................19  
-2021 data............................................................................................21  
-2022 data............................................................................................23  
-2023 data............................................................................................24 
+blaOXA gene frequency..............................................................................18  
+CRAB clusters per NCBI.............................................................................23  
+2020 data............................................................................................26  
+2021 data............................................................................................28  
+2022 data............................................................................................30  
+2023 data............................................................................................32 
 
 \noindent\rule{16cm}{0.4pt}
 ### Summary
@@ -620,7 +620,10 @@ table_1 <- colformat_double(x = table_1,
   big.mark="", digits = 0)
 table_1
 ```
-Patients with multiple isolates submitted will only receive sequencing once a year unless there is a change in the PCR gene detected which explains the difference in the number of isolates submitted versus the number of isolates sent for sequencing.
+Patients with multiple isolates submitted will only be sequencing once per year unless the PCR gene detected changes which is why more isolates were submitted than were sequenced.
+
+\newpage
+
 ```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
 #subset only sequenced isolates
 sequenced <- subset(alldata, WGS.ID. != 'NA', na.rm = TRUE)
@@ -708,7 +711,7 @@ ggplot(alldata_HD) +
 ```
 Isolates from North Carolina and Kentucky were submitted by out of state laboratories but are Virginia residents. Isolate location is based off of submitting facility location not where the patient is located so this may not be a true representation of case location.
 
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', out.width = "95%"}
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', fig.width=10, fig.height=11}
 HD_count <- alldata %>% 
   count(`Health District`, WGS.Gene)
 HD_count_sub <- subset(HD_count, WGS.Gene != 'No OXA Genes', na.rm = TRUE)
@@ -725,9 +728,9 @@ ggplot(HD_count_sub) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
   panel.background = element_blank(), axis.line = element_line(colour = "black"),
   legend.position = "none", 
-           axis.text.x = element_text( size = 8),
-           axis.title = element_text( size = 8, face = "bold" ),
-           strip.text = element_text(size = 8)) +
+           axis.text.x = element_text( size = 10),
+           axis.title = element_text( size = 10, face = "bold" ),
+           strip.text = element_text(size = 10)) +
   facet_wrap(~WGS.Gene)
 ```
 
@@ -1233,35 +1236,15 @@ OXA_Genes <- OXA_Genes %>%
 
 #creating italicized title for freq plot
 plottitle2 <- expression(paste('Frequency of OXA-23 Gene in ', 
-                               italic("Acinetobacter baumannii ")))
+                               italic("Acinetobacter baumannii")))
 plottitle3 <- expression(paste('Frequency of OXA-24 Gene in ', 
-                               italic("Acinetobacter baumannii ")))
+                               italic("Acinetobacter baumannii")))
 plottitle4 <- expression(paste('Frequency of OXA-72 Gene in ', 
-                               italic("Acinetobacter baumannii ")))
-plottitle5 <- expression(paste('Frequency of OXA-23 & OXA-72 Genes (in the same isolate) in ', 
-                               italic("Acinetobacter baumannii ")))
+                               italic("Acinetobacter baumannii")))
+plottitle5 <- expression(paste('Frequency of both OXA-23 & OXA-72 Genes in the same isolate of ', 
+                               italic("Acinetobacter baumannii")))
 plottitle6 <- expression(paste('Frequency of Other OXA Genes in ', 
-                               italic("Acinetobacter baumannii ")))
-#freq plot
-ggplot(data = OXA_Genes, mapping = aes(x = Date.of.collection,
-                                       color = WGS.Gene), by = "months") +
-  geom_freqpoly(binwidth = 30, size = 1) +
-  labs(title=expression()) +
-  theme_bw() +
-  xlab("Year") +
-  ylab("Number of Isolates") +
-  labs(title = plottitle2) +  
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-  panel.background = element_blank(), axis.line = element_line(colour = "black"),
-  legend.position = "none", 
-           axis.text.x = element_text( size = 10),
-           axis.title = element_text( size = 10, face = "bold" ),
-           strip.text = element_text(size = 10)) +
-  #geom_hline(data = OXAmean, aes(yintercept = meanY), color = "red") +
-  scale_color_discrete(name="Gene") + #Rename legend
-  scale_color_manual(values = c("#2CA02C", "#1F77B4", "#AEC7EB", 
-                 "#FF7F0E", "#FFBB78")) +
-  facet_wrap(~ WGS.Gene)
+                               italic("Acinetobacter baumannii")))
 
 #OXA-23 Frequency
 ggplot(data = OXA23_Genes, mapping = aes(x = Date.of.collection)) +
@@ -1276,6 +1259,7 @@ ggplot(data = OXA23_Genes, mapping = aes(x = Date.of.collection)) +
   guides(x = guide_axis(angle = 45))+  
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
   panel.background = element_blank(), axis.line = element_line(colour = "black"),
+  plot.title = element_text(size=10),
   legend.position = "none", 
            axis.text.x = element_text( size = 10),
            axis.title = element_text( size = 10, face = "bold" ),
@@ -1294,6 +1278,7 @@ ggplot(data = OXA24_Genes, mapping = aes(x = Date.of.collection)) +
   guides(x = guide_axis(angle = 45))+  
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
   panel.background = element_blank(), axis.line = element_line(colour = "black"),
+  plot.title = element_text(size=10),
   legend.position = "none", 
            axis.text.x = element_text( size = 10),
            axis.title = element_text( size = 10, face = "bold" ),
@@ -1312,12 +1297,13 @@ ggplot(data = OXA72_Genes, mapping = aes(x = Date.of.collection)) +
   guides(x = guide_axis(angle = 45))+  
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
   panel.background = element_blank(), axis.line = element_line(colour = "black"),
+  plot.title = element_text(size=10),
   legend.position = "none", 
            axis.text.x = element_text( size = 10),
            axis.title = element_text( size = 10, face = "bold" ),
            strip.text = element_text(size = 10)) 
 
-#OXA-2372 Frequency
+#OXA-23&72 Frequency
 ggplot(data = OXA2372_Genes, mapping = aes(x = Date.of.collection)) +
   geom_freqpoly(binwidth = 30, size = 1, color = "#AEC7EB") +
     scale_x_date(labels=date_format ("%b %y"), breaks=date_breaks("1 months")) +
@@ -1330,6 +1316,7 @@ ggplot(data = OXA2372_Genes, mapping = aes(x = Date.of.collection)) +
   guides(x = guide_axis(angle = 45))+  
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
   panel.background = element_blank(), axis.line = element_line(colour = "black"),
+  plot.title = element_text(size=10),
   legend.position = "none", 
            axis.text.x = element_text( size = 10),
            axis.title = element_text( size = 10, face = "bold" ),
@@ -1338,7 +1325,7 @@ ggplot(data = OXA2372_Genes, mapping = aes(x = Date.of.collection)) +
 #Other OXA Frequency
 ggplot(data = OtherOXA_Genes, mapping = aes(x = Date.of.collection)) +
   geom_freqpoly(binwidth = 30, size = 1, color = "#2CA02C") +
-    scale_x_date(labels=date_format ("%b %y"), breaks=date_breaks("2 months")) +
+  scale_x_date(labels=date_format ("%b %y"), breaks=date_breaks("2 months")) +
   scale_y_continuous(breaks = c(1, 2, 3), expand = c(0,0.05)) + #May need to adjust breaks annually
   labs(title=expression()) +
   theme_bw() +
@@ -1348,6 +1335,7 @@ ggplot(data = OtherOXA_Genes, mapping = aes(x = Date.of.collection)) +
   guides(x = guide_axis(angle = 45))+  
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
   panel.background = element_blank(), axis.line = element_line(colour = "black"),
+  plot.title = element_text(size=10),
   legend.position = "none", 
            axis.text.x = element_text( size = 10),
            axis.title = element_text( size = 10, face = "bold" ),
@@ -1359,8 +1347,12 @@ ggplot(data = OtherOXA_Genes, mapping = aes(x = Date.of.collection)) +
 \noindent\rule{16cm}{0.4pt}
 ## *A. baumannii* Clusters Per NCBI
 \noindent\rule{16cm}{0.4pt}
+NCBI is the National Center for Biotechnology Information (https://www.ncbi.nlm.nih.gov/).  Public health laboratories receiving CDC funding for carbapenem-resistant organism sequencing are required to submit sequences to the NCBI Pathogen Detection database.  One advantage of submission to Pathogen Detection is for broad swath surveillance for potential genetically related isolates among all isolate sequences submitted to NCBI under organism-specific umbrella BioProjects surveilled by Pathogen Detection. Adopting NGS methods for detection of clusters of AMR bacterial isolates that are genetically similar using a single nucleotide polymorphism (SNP) comparison method enables genomic surveillance of CRAB isolates. Clusters identified by NCBI are then verified by DCLS and assigned DCLS cluster ID codes and reported to VDH district epidemiologists. 
+Isolates from North Carolina and Kentucky were submitted by out of state laboratories but are Virginia residents. Any clusters with less than 3 Virginia isolates have been removed from this graph.  Isolate location is based off of the submitting facility's location not where the patient is located so this may not be a true representation of case location.
 
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all'}
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, results='hide',fig.keep='all', fig.width=10,fig.height=13}
 #Renaming NCBI clusters
 Cluster_only2 <- subset(alldata, SNP.cluster!= 'Not Sequenced')
 Cluster_only2 <- subset(Cluster_only2, SNP.cluster != 'No Cluster')
@@ -1378,7 +1370,7 @@ Cluster_only2 <- Cluster_only2 %>%
                                    grepl("PDS000107408.24", SNP.cluster) ~ "VA_AB_OXA23_230125",
                                    grepl("PDS000172394.2", SNP.cluster) ~ "VA_AB_OXA23NDM_240106",
                                    grepl("PDS000120625.5", SNP.cluster) ~ "VA_AB_OXA23_221103",
-                                   grepl("PDS000133955.7", SNP.cluster) ~ "VA_AB_OXA23_230424",
+                                   grepl("PDS000133955.7", SNP.cluster) ~ "VA_AB_OXA23_230424-2",
                                    grepl("PDS000104873.4", SNP.cluster) ~ "Duplicate patient",
                                    grepl("PDS000107407.10", SNP.cluster) ~ "Duplicate patient",
                                    grepl("PDS000112545.7", SNP.cluster) ~ "SNP >10",
@@ -1406,29 +1398,72 @@ Clusters3 <- Cluster_only2 %>%
   filter(total_isolates >= 3)
 
 #bar graph of clusters per county over time
+#ggplot(Clusters3) +
+#  geom_histogram(aes(x=Date.of.collection, fill = `Health District`), by = "months",
+#                 color = "Black", binwidth= 31) +
+#  scale_fill_manual(values=Palette) +
+#  facet_wrap(reformulate("Cluster.ID", "."), scales = "free_x", nrow = 4) +
+#  xlab("Month of Collection") +
+  # ylab("Number of Isolates") +
+  # scale_x_date(labels=date_format ("%b %y"), breaks=date_breaks("2 months")) + 
+  # theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+  # panel.background = element_blank(), axis.line = element_line(colour = "black"),
+  # axis.text.x = element_text( size = 8),
+  #       axis.text.y = element_text( size = 8),
+  #       axis.title = element_text(size = 8, face = "bold", hjust = 0.5),
+  #       legend.position = "bottom",
+  #       legend.key.size = unit(.2, 'cm'),
+  #       legend.text=element_text(size=8),
+  #       strip.text.y = element_text(angle = 0, size = 8)) +
+#   theme(panel.grid.minor = element_blank())+ #Remove grid lines for non-break numbers
+ 
+  # labs(title = "Cluster Isolates per Health District")+
+  # guides(x = guide_axis(angle = 45))
+
+#bar graph of clusters per county over time
 ggplot(Clusters3) +
   geom_histogram(aes(x=Date.of.collection, fill = `Health District`), by = "months",
                  color = "Black", binwidth= 31) +
   scale_fill_manual(values=Palette) +
-  facet_grid(Cluster.ID ~ ., scales = "free", space = "free") +
+  facet_grid(reformulate(".", "Cluster.ID"), scales = "free_x") +
   xlab("Month of Collection") +
   ylab("Number of Isolates") +
-  scale_x_continuous(breaks=c(1,2,3,4)) +
+  scale_x_date(labels=date_format ("%b %y"), breaks=date_breaks("2 months")) + 
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
   panel.background = element_blank(), axis.line = element_line(colour = "black"),
-  axis.text.x = element_text( size = 8),
-        axis.text.y = element_text( size = 8),
-        axis.title = element_text(size = 8, face = "bold", hjust = 0.5),
+  axis.text.x = element_text( size = 10),
+        axis.text.y = element_text( size = 10),
+        axis.title = element_text(size = 10, face = "bold", hjust = 0.5),
         legend.position = "bottom",
         legend.key.size = unit(.2, 'cm'),
-        legend.text=element_text(size=8),
-        strip.text.y = element_text(angle = 0, size = 8)) +
+        legend.text=element_text(size=10),
+        strip.text.y = element_text(angle = 0, size = 10)) +
 #   theme(panel.grid.minor = element_blank())+ #Remove grid lines for non-break numbers
- 
-  labs(title = "Cluster Isolates per Health District")
+  labs(title = "Cluster Isolates per Health District")+
+  guides(x = guide_axis(angle = 45), fill = guide_legend(title.position = "top", title.hjust=0.5))
 ```
-NCBI is the National Center for Biotechnology Information (https://www.ncbi.nlm.nih.gov/).  Public health laboratories receiving CDC funding for carbapenem-resistant organism sequencing are required to submit sequences to the NCBI Pathogen Detection database.  One advantage of submission to Pathogen Detection is for broad swath surveillance for potential genetically related isolates among all isolate sequences submitted to NCBI under organism-specific umbrella BioProjects surveilled by Pathogen Detection. Adopting NGS methods for detection of clusters of AMR bacterial isolates that are genetically similar using a single nucleotide polymorphism (SNP) comparison method enables genomic surveillance of CRAB isolates. Clusters identified by NCBI are then verified by DCLS and assigned cluster ID codes and reported to VDH district epidemiologists. 
-Isolates from North Carolina and Kentucky were submitted by out of state laboratories but are Virginia residents. Any clusters with less than 3 Virginia isolates have been removed from this graph.  Isolate location is based off of the submitting facility's location not where the patient is located so this may not be a true representation of case location.
+
+
+\newpage
+Table 7: Isolates per DCLS Cluster ID by Year
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "Isolates per DCLS Cluster ID by Year", tab.id = "tab 7", label = "tab 7"}
+ClustersGene <- Clusters3 %>%
+  separate(Date.of.collection, c('Year', 'Month', 'Day'), '-')
+
+
+#Changes the Column names to be table ready
+colnames(ClustersGene)[colnames(ClustersGene) == 'Cluster.ID'] <- 'DCLS Cluster ID'
+
+#Creates Genes per cluster table (simplified version)
+table_7 <- ClustersGene %>% 
+  select('DCLS Cluster ID', Year) %>%
+  tbl_cross(row = 'DCLS Cluster ID',
+            col = Year,
+            #percent = "row",
+            statistic = NULL)%>%
+  bold_labels()
+table_7
+```
 
 \newpage
 \noindent\rule{16cm}{0.4pt}
@@ -1451,7 +1486,7 @@ alldata_sep <- alldata_sep %>%
                                    grepl("PDS000107408.24", SNP.cluster) ~ "VA_AB_OXA23_230125",
                                    grepl("PDS000172394.2", SNP.cluster) ~ "VA_AB_OXA23NDM_240106",
                                    grepl("PDS000120625.5", SNP.cluster) ~ "VA_AB_OXA23_221103",
-                                   grepl("PDS000133955.7", SNP.cluster) ~ "VA_AB_OXA23_230424",
+                                   grepl("PDS000133955.7", SNP.cluster) ~ "VA_AB_OXA23_230424-2",
                                    grepl("PDS000104873.4", SNP.cluster) ~ "Duplicate patient",
                                    grepl("PDS000107407.10", SNP.cluster) ~ "Duplicate patient",
                                    grepl("PDS000112545.7", SNP.cluster) ~ "SNP >10",
@@ -1462,7 +1497,7 @@ alldata_sep <- alldata_sep %>%
 
 alldata_sep <- subset(alldata_sep, Cluster.ID!= 'SNP >10')
 alldata_sep <- subset(alldata_sep, Cluster.ID!= 'Duplicate patient')
-alldata_sep 
+alldata_sep$WGS.Gene = gsub("OXA-23, OXA-72", "OXA-23 & OXA-72", alldata_sep$WGS.Gene)
 
 crab_2020 <- alldata_sep %>%
   filter(Year == 2020)
@@ -1471,7 +1506,7 @@ crab_2020 <- alldata_sep %>%
 crab_2020 %>% 
   count(Submitter, Cluster.ID) %>% 
   ggplot() +
-  geom_col(mapping = aes(y = Submitter, fill = Cluster.ID, x = n), 
+  geom_col(mapping = aes(y = Submitter, fill = factor(Cluster.ID, levels=c("VA_AB_OXA23OXA24_231117","VA_AB_OXA23_230424", "VA_AB_OXA24_230526", "VA_AB_OXA24_231024", "VA_AB_OXA23_220720", "VA_AB_OXA23_230626", "VA_AB_OXA23_230424-1",  "VA_AB_OXA23NDM_240106", "VA_AB_OXA23_221103", "VA_AB_OXA23_230424-2", "VA_AB_OXA23_240205", "VA_AB_OXA23_230125", "VA_AB_OXA24_231119", "VA_AB_OXA24_220914 \n or VA_AB_OXA24_220120")), x = n), 
            color = "black") +
   scale_fill_manual(values=Cluster_Palette) +
   scale_x_continuous(expand = c(0,0)) +
@@ -1481,24 +1516,40 @@ crab_2020 %>%
   panel.background = element_blank(), axis.line = element_line(colour = "black"),
   legend.key.size = unit(.5, 'cm'),
         legend.text=element_text(size=9)) +
-  guides(fill=guide_legend(title="Cluster ID")) #Rename legend
+  guides(fill=guide_legend(title="DCLS Cluster ID")) #Rename legend
 ```
-Cluster IDs have been color coded to assist in identifying clusters from one year to the next in this and the following graphs of yearly data.
+DCLS Cluster IDs have been color coded to assist in identifying clusters from one year to the next in this and the following graphs of yearly data.
 
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2020 OXA Genes Identified Per Cluster", tab.id = "tab 7", label = "tab 7"}
+\newpage
+Table 8: 2020 OXA Genes Identified Per Cluster
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2020 OXA Genes Identified Per Cluster", tab.id = "tab 8", label = "tab 8"}
 
-#Genes per cluster table
-crab_2020 %>% 
-  select(Cluster.ID, WGS.Gene) %>% 
-  tbl_summary(by = WGS.Gene) %>%
-  modify_header(label = "**Cluster ID**") %>% 
-  add_overall() %>% 
-  as_flex_table() %>% 
-  flextable::fontsize(size = 7) %>% 
-  fontsize(size = 7, part = "header") %>% 
-  width(j = NULL, .85, unit = "in") %>%
+#Genes per cluster table (old table too complicated)
+#crab_2020 %>% 
+#  select(Cluster.ID, WGS.Gene) %>% 
+#  tbl_summary(by = WGS.Gene) %>%
+#  modify_header(label = "**Cluster ID**") %>% 
+#  add_overall() %>% 
+#  as_flex_table() %>% 
+#  flextable::fontsize(size = 7) %>% 
+#  fontsize(size = 7, part = "header") %>% 
+#  width(j = NULL, .85, unit = "in") %>%
 #  flextable::delete_rows(i = 1, part = "body") %>%
-  autofit()
+#  autofit()
+
+#Changes the Column names to be table ready
+colnames(crab_2020)[colnames(crab_2020) == 'Cluster.ID'] <- 'DCLS Cluster ID'
+colnames(crab_2020)[colnames(crab_2020) == 'WGS.Gene'] <- 'Resistance Gene'
+
+#Creates Genes per cluster table (simplified version)
+table_8 <- crab_2020 %>% 
+  select('DCLS Cluster ID', 'Resistance Gene') %>%
+  tbl_cross(row = 'DCLS Cluster ID',
+            col = 'Resistance Gene',
+            #percent = "row",
+            statistic = NULL)%>%
+  bold_labels()
+table_8
 ```
 \newpage
 \noindent\rule{16cm}{0.4pt}
@@ -1514,7 +1565,7 @@ crab_2021 <- alldata_sep %>%
 crab_2021 %>% 
   count(Submitter, Cluster.ID) %>% 
   ggplot() +
-  geom_col(mapping = aes(y = Submitter, fill = Cluster.ID, x = n), color = "black") +
+  geom_col(mapping = aes(y = Submitter, fill =factor(Cluster.ID, levels=c("VA_AB_OXA23OXA24_231117","VA_AB_OXA23_230424", "VA_AB_OXA24_230526", "VA_AB_OXA24_231024", "VA_AB_OXA23_220720", "VA_AB_OXA23_230626", "VA_AB_OXA23_230424-1",  "VA_AB_OXA23NDM_240106", "VA_AB_OXA23_221103", "VA_AB_OXA23_230424-2", "VA_AB_OXA23_240205", "VA_AB_OXA23_230125", "VA_AB_OXA24_231119", "VA_AB_OXA24_220914 \n or VA_AB_OXA24_220120")), x = n), color = "black") +
   scale_fill_manual(values=Cluster_Palette) +
   scale_x_continuous(expand = c(0,0)) +
   xlab("Number of Isolates") +
@@ -1523,22 +1574,38 @@ crab_2021 %>%
   panel.background = element_blank(), axis.line = element_line(colour = "black"),
   legend.key.size = unit(.5, 'cm'),
     legend.text=element_text(size=8)) +
-  guides(fill=guide_legend(title="Cluster ID")) #Rename legend
+  guides(fill=guide_legend(title="DCLS Cluster ID")) #Rename legend
 ```
 
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2021 OXA Genes Identified Per Cluster", tab.id = "tab 8", label = "tab 8"}
+\newpage
+Table 9: 2021 OXA Genes Identified Per Cluster
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "center", tab.cap = "2021 OXA Genes Identified Per Cluster", tab.id = "tab 9", label = "tab 9"}
 
-#Genes per cluster table
-crab_2021 %>% 
-  select(Cluster.ID, WGS.Gene) %>% 
-  tbl_summary(by = WGS.Gene) %>%
-  modify_header(label = "**Cluster**") %>% 
-  add_overall() %>% 
-  as_flex_table() %>% 
-  flextable::fontsize(size = 7) %>% 
-  fontsize(size = 7, part = "header") %>% 
-  width(j = NULL, .85, unit = "in") %>%
-  autofit()
+#Genes per cluster table (old table too complicated)
+#crab_2021 %>% 
+#  select(Cluster.ID, WGS.Gene) %>% 
+#  tbl_summary(by = WGS.Gene) %>%
+#  modify_header(label = "**Cluster**") %>% 
+#  add_overall() %>% 
+#  as_flex_table() %>% 
+#  flextable::fontsize(size = 7) %>% 
+#  fontsize(size = 7, part = "header") %>% 
+#  width(j = NULL, .85, unit = "in") %>%
+#  autofit()
+
+#Changes the Column names to be table ready
+colnames(crab_2021)[colnames(crab_2021) == 'Cluster.ID'] <- 'DCLS Cluster ID'
+colnames(crab_2021)[colnames(crab_2021) == 'WGS.Gene'] <- 'Resistance Gene'
+
+#Creates Genes per cluster table (simplified version)
+table_9 <- crab_2021 %>% 
+  select('DCLS Cluster ID', 'Resistance Gene') %>%
+  tbl_cross(row = 'DCLS Cluster ID',
+            col = 'Resistance Gene',
+            #percent = "row",
+            statistic = NULL)%>%
+  bold_labels()
+table_9
 ```
 \newpage
 \noindent\rule{16cm}{0.4pt}
@@ -1554,7 +1621,7 @@ crab_2022
 crab_2022 %>% 
   count(Submitter, Cluster.ID) %>% 
   ggplot() +
-  geom_col(mapping = aes(y = Submitter, fill = Cluster.ID, x = n), 
+  geom_col(mapping = aes(y = Submitter, fill = factor(Cluster.ID, levels=c("VA_AB_OXA23OXA24_231117","VA_AB_OXA23_230424", "VA_AB_OXA24_230526", "VA_AB_OXA24_231024", "VA_AB_OXA23_220720", "VA_AB_OXA23_230626", "VA_AB_OXA23_230424-1",  "VA_AB_OXA23NDM_240106", "VA_AB_OXA23_221103", "VA_AB_OXA23_230424-2", "VA_AB_OXA23_240205", "VA_AB_OXA23_230125", "VA_AB_OXA24_231119", "VA_AB_OXA24_220914 \n or VA_AB_OXA24_220120")), x = n), 
            color = "black") +
   scale_fill_manual(values=Cluster_Palette) +
   xlab("Number of Isolates") +
@@ -1565,21 +1632,37 @@ crab_2022 %>%
   legend.key.size = unit(.5, 'cm'),
     legend.text=element_text(size=9),
      plot.title = element_text(hjust = 0)) +
-  guides(fill=guide_legend(title="Cluster ID")) #Rename legend
+  guides(fill=guide_legend(title="DCLS Cluster ID")) #Rename legend
 ```
 
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "left", tab.cap = "2022 OXA Genes Identified Per Cluster", tab.id = "tab 9", label = "tab 9"}
+\newpage
+Table 10: 2022 OXA Genes Identified Per Cluster
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "left", tab.cap = "2022 OXA Genes Identified Per Cluster", tab.id = "tab 10", label = "tab 10"}
 #Genes per Cluster table
-crab_2022 %>% 
-  select(Cluster.ID, WGS.Gene) %>% 
-  tbl_summary(by = WGS.Gene) %>%
-  modify_header(label = "**Cluster ID**") %>% 
-  add_overall() %>% 
-  as_flex_table() %>% 
-  flextable::fontsize(size = 7) %>% 
-  fontsize(size = 7, part = "header") %>% 
-  width(j = 1, 1.5, unit = "in") %>%
-  width(j = 2:6, .7, unit = "in")
+#crab_2022 %>% 
+#  select(Cluster.ID, WGS.Gene) %>% 
+#  tbl_summary(by = WGS.Gene) %>%
+#  modify_header(label = "**Cluster ID**") %>% 
+#  add_overall() %>% 
+#  as_flex_table() %>% 
+#  flextable::fontsize(size = 7) %>% 
+#  fontsize(size = 7, part = "header") %>% 
+#  width(j = 1, 1.5, unit = "in") %>%
+#  width(j = 2:6, .7, unit = "in")
+
+#Changes the Column names to be table ready
+colnames(crab_2022)[colnames(crab_2022) == 'Cluster.ID'] <- 'DCLS Cluster ID'
+colnames(crab_2022)[colnames(crab_2022) == 'WGS.Gene'] <- 'Resistance Gene'
+
+#Creates Genes per cluster table (simplified version)
+table_10 <- crab_2022 %>% 
+  select('DCLS Cluster ID', 'Resistance Gene') %>%
+  tbl_cross(row = 'DCLS Cluster ID',
+            col = 'Resistance Gene',
+            #percent = "row",
+            statistic = NULL)%>%
+  bold_labels()
+table_10
 ```
 \newpage
 \noindent\rule{16cm}{0.4pt}
@@ -1594,7 +1677,7 @@ crab_2023
 crab_2023 %>% 
   count(Submitter, Cluster.ID) %>% 
   ggplot() +
-  geom_col(mapping = aes(y = Submitter, fill = Cluster.ID, x = n), 
+  geom_col(mapping = aes(y = Submitter, fill = factor(Cluster.ID, levels=c("VA_AB_OXA23OXA24_231117","VA_AB_OXA23_230424", "VA_AB_OXA24_230526", "VA_AB_OXA24_231024", "VA_AB_OXA23_220720", "VA_AB_OXA23_230626", "VA_AB_OXA23_230424-1",  "VA_AB_OXA23NDM_240106", "VA_AB_OXA23_221103", "VA_AB_OXA23_230424-2", "VA_AB_OXA23_240205", "VA_AB_OXA23_230125", "VA_AB_OXA24_231119", "VA_AB_OXA24_220914 \n or VA_AB_OXA24_220120")), x = n), 
            color = "black") +
   scale_fill_manual(values=Cluster_Palette) +
   xlab("Number of Isolates") +
@@ -1605,25 +1688,37 @@ crab_2023 %>%
   legend.key.size = unit(.5, 'cm'),
     legend.text=element_text(size=9),
      plot.title = element_text(hjust = 0)) +
-  guides(fill=guide_legend(title="Cluster ID")) #Rename legend
+  guides(fill=guide_legend(title="DCLS Cluster ID")) #Rename legend
 ```
 
-```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "left", tab.cap = "2023 OXA Genes Identified Per Cluster", tab.id = "tab 10", label = "tab 10"}
-#Genes per Cluster table
-crab_2023 %>% 
-  select(Cluster.ID, WGS.Gene) %>% 
-  tbl_summary(by = WGS.Gene) %>%
-  modify_header(label = "**Cluster ID**") %>% 
-  add_overall() %>% 
-  as_flex_table() %>% 
-  flextable::fontsize(size = 7) %>% 
-  fontsize(size = 7, part = "header") %>% 
-  width(j = 1, 1.5, unit = "in") %>%
-  width(j = 2:8, .65, unit = "in") 
+\newpage
+Table 11: 2023 OXA Genes Identified Per Cluster
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE, ft.align = "left", tab.cap = "2023 OXA Genes Identified Per Cluster", tab.id = "tab 11", label = "tab 11"}
+#Genes per Cluster table (old table too complicated)
+#crab_2023 %>% 
+#  select(Cluster.ID, WGS.Gene)# %>% 
+#  tbl_summary(by = WGS.Gene) %>%
+#  modify_header(label = "**Cluster ID**") %>% 
+#  add_overall() %>% 
+#  as_flex_table() %>% 
+#  flextable::fontsize(size = 7) %>% 
+#  fontsize(size = 7, part = "header") %>% 
+#  width(j = 1, 1.5, unit = "in") %>%
+#  width(j = 2:8, .65, unit = "in") 
+
+#Changes the Column names to be table ready
+colnames(crab_2022)[colnames(crab_2022) == 'Cluster.ID'] <- 'DCLS Cluster ID'
+colnames(crab_2022)[colnames(crab_2022) == 'WGS.Gene'] <- 'Resistance Gene'
+
+#Creates Genes per cluster table (simplified version)
+table_11 <- crab_2022 %>% 
+  select('DCLS Cluster ID', 'Resistance Gene') %>%
+  tbl_cross(row = 'DCLS Cluster ID',
+            col = 'Resistance Gene',
+            #percent = "row",
+            statistic = NULL) %>%
+  bold_labels()
+table_11
 ```
-\noindent\rule{16cm}{0.4pt}
-##### Report Generated: `r Sys.Date()`
-
-
 \noindent\rule{16cm}{0.4pt}
 ##### Report Generated: `r Sys.Date()`
